@@ -534,6 +534,26 @@ end)
 rollResult.OnClientEvent:Connect(function(item)
 	local rarityData = Cards.Rarities[item.Rarity]
 	
+	-- Update Spins (Count every roll received)
+	totalSpins = totalSpins + 1
+	spinLabel.Text = "TOTAL SPINS: " .. totalSpins
+	
+	if not autoUnlocked and totalSpins >= AUTO_UNLOCK_THRESHOLD then
+		autoUnlocked = true
+		autoButton.Text = "AUTO UNLOCKED!"
+		autoButton.BackgroundColor3 = Color3.fromRGB(40, 200, 40)
+		TweenService:Create(autoButton, TweenInfo.new(1, Enum.EasingStyle.Elastic), {Size = UDim2.new(0, 200, 0, 60)}):Play()
+		task.delay(1.5, function()
+			TweenService:Create(autoButton, TweenInfo.new(0.5), {Size = UDim2.new(0, 180, 0, 50)}):Play()
+			if not autoSpinEnabled then
+				autoButton.Text = "AUTO: OFF"
+				autoButton.BackgroundColor3 = Color3.fromRGB(200, 40, 40)
+			end
+		end)
+	elseif not autoUnlocked then
+		autoButton.Text = string.format("LOCKED (%d/%d)", totalSpins, AUTO_UNLOCK_THRESHOLD)
+	end
+
 	if rarityData.Rank >= 3 then
 		task.wait(1)
 	end
@@ -553,26 +573,6 @@ rollResult.OnClientEvent:Connect(function(item)
 	spawnAura(rarityData)
 	if rarityData.Vfx.Shake then applyShake(rarityData.Rank * 5) end
 	if rarityData.Vfx.Flash then applyFlash(rarityData.Color) end
-
-	-- Update Spins
-	totalSpins = totalSpins + 1
-	spinLabel.Text = "TOTAL SPINS: " .. totalSpins
-	
-	if not autoUnlocked and totalSpins >= AUTO_UNLOCK_THRESHOLD then
-		autoUnlocked = true
-		autoButton.Text = "AUTO UNLOCKED!"
-		autoButton.BackgroundColor3 = Color3.fromRGB(40, 200, 40)
-		TweenService:Create(autoButton, TweenInfo.new(1, Enum.EasingStyle.Elastic), {Size = UDim2.new(0, 200, 0, 60)}):Play()
-		task.delay(1.5, function()
-			TweenService:Create(autoButton, TweenInfo.new(0.5), {Size = UDim2.new(0, 180, 0, 50)}):Play()
-			if not autoSpinEnabled then
-				autoButton.Text = "AUTO: OFF"
-				autoButton.BackgroundColor3 = Color3.fromRGB(200, 40, 40)
-			end
-		end)
-	elseif not autoUnlocked then
-		autoButton.Text = string.format("LOCKED (%d/%d)", totalSpins, AUTO_UNLOCK_THRESHOLD)
-	end
 
 	currentCard = item
 	resultLabel.Text = string.format("YOU GOT: %s!\n(%s)", item.Name, item.Rarity)
