@@ -1,0 +1,6 @@
+{
+    "languageMode": "luau",
+    "aliases": {
+        "Shared": "src/shared"
+    }
+}
