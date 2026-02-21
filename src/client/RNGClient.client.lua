@@ -13,6 +13,50 @@ local autoSpinEnabled = false
 local currentCard = nil
 local minRarityRank = 1
 local currentAura = nil
+local lastRollTime = 0
+local ROLL_COOLDOWN = 2.0
+
+-- Helper for modern styling
+local function applyModernStyle(instance, color1, color2)
+	local corner = instance:FindFirstChildOfClass("UICorner") or Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, 10)
+	corner.Parent = instance
+
+	local stroke = Instance.new("UIStroke")
+	stroke.Thickness = 2.5
+	stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	stroke.Color = color1:Lerp(Color3.new(1, 1, 1), 0.4)
+	stroke.Transparency = 0.2
+	stroke.Parent = instance
+
+	local gradient = Instance.new("UIGradient")
+	gradient.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, color1:Lerp(Color3.new(1, 1, 1), 0.2)), -- Lighter top
+		ColorSequenceKeypoint.new(0.5, color1),
+		ColorSequenceKeypoint.new(1, color2 or color1:Lerp(Color3.new(0, 0, 0), 0.3)) -- Darker bottom
+	})
+	gradient.Rotation = 90
+	gradient.Parent = instance
+	
+	-- Hover effects using TweenService
+	instance.MouseEnter:Connect(function()
+		TweenService:Create(instance, TweenInfo.new(0.3), {BackgroundColor3 = color1:Lerp(Color3.new(1, 1, 1), 0.2)}):Play()
+		TweenService:Create(stroke, TweenInfo.new(0.3), {Thickness = 4, Transparency = 0}):Play()
+	end)
+	
+	instance.MouseLeave:Connect(function()
+		TweenService:Create(instance, TweenInfo.new(0.3), {BackgroundColor3 = color1}):Play()
+		TweenService:Create(stroke, TweenInfo.new(0.3), {Thickness = 2.5, Transparency = 0.2}):Play()
+	end)
+
+	-- Add Text Glow/Stroke
+	local textStroke = Instance.new("UIStroke")
+	textStroke.Thickness = 1.5
+	textStroke.Color = Color3.new(0, 0, 0)
+	textStroke.Transparency = 0.5
+	textStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual
+	textStroke.Parent = instance
+end
 
 -- Basic UI Setup
 local function createUI()
@@ -33,20 +77,49 @@ local function createUI()
 	flashFrame.ZIndex = 100
 	flashFrame.Parent = screenGui
 
-	-- Roll Button
+	-- Roll Button Container (for animation scaling)
+	local rollContainer = Instance.new("Frame")
+	rollContainer.Name = "RollContainer"
+	rollContainer.Size = UDim2.new(0, 180, 0, 50)
+	rollContainer.Position = UDim2.new(0.5, -195, 0.85, 0)
+	rollContainer.BackgroundTransparency = 1
+	rollContainer.Parent = screenGui
+
 	local rollButton = Instance.new("TextButton")
 	rollButton.Name = "RollButton"
-	rollButton.Size = UDim2.new(0, 180, 0, 50)
-	rollButton.Position = UDim2.new(0.5, -195, 0.85, 0)
+	rollButton.Size = UDim2.new(1, 0, 1, 0)
 	rollButton.Text = "ROLL"
-	rollButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+	rollButton.BackgroundColor3 = Color3.fromRGB(80, 50, 200) -- Vibrant Electric Purple
 	rollButton.TextColor3 = Color3.new(1, 1, 1)
 	rollButton.Font = Enum.Font.GothamBold
-	rollButton.TextSize = 20
-	local rbCorner = Instance.new("UICorner")
-	rbCorner.CornerRadius = UDim.new(0, 8)
-	rbCorner.Parent = rollButton
-	rollButton.Parent = screenGui
+	rollButton.TextSize = 24
+	rollButton.ClipsDescendants = true
+	rollButton.Parent = rollContainer
+	applyModernStyle(rollButton, Color3.fromRGB(80, 50, 200), Color3.fromRGB(40, 20, 120)) -- Electric Blue/Purple
+
+	-- Wave Overlay for Charging effect
+	local waveOverlay = Instance.new("Frame")
+	waveOverlay.Name = "WaveOverlay"
+	waveOverlay.Size = UDim2.new(2, 0, 1, 0)
+	waveOverlay.Position = UDim2.new(-2, 0, 0, 0)
+	waveOverlay.BackgroundTransparency = 1
+	waveOverlay.ZIndex = 0
+	waveOverlay.Parent = rollButton
+
+	local waveGradient = Instance.new("UIGradient")
+	waveGradient.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.new(1, 1, 1)),
+		ColorSequenceKeypoint.new(0.5, Color3.new(1, 1, 1)),
+		ColorSequenceKeypoint.new(1, Color3.new(1, 1, 1))
+	})
+	waveGradient.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 1),
+		NumberSequenceKeypoint.new(0.4, 0.8),
+		NumberSequenceKeypoint.new(0.5, 0.4), -- Sharper wave
+		NumberSequenceKeypoint.new(0.6, 0.8),
+		NumberSequenceKeypoint.new(1, 1)
+	})
+	waveGradient.Parent = waveOverlay
 
 	-- AutoSpin Button
 	local autoButton = Instance.new("TextButton")
@@ -54,28 +127,26 @@ local function createUI()
 	autoButton.Size = UDim2.new(0, 180, 0, 50)
 	autoButton.Position = UDim2.new(0.5, 15, 0.85, 0)
 	autoButton.Text = "AUTO: OFF"
-	autoButton.BackgroundColor3 = Color3.fromRGB(80, 40, 40)
+	autoButton.BackgroundColor3 = Color3.fromRGB(200, 40, 40) -- Vibrant Crimson
 	autoButton.TextColor3 = Color3.new(1, 1, 1)
 	autoButton.Font = Enum.Font.GothamBold
-	autoButton.TextSize = 20
-	local abCorner = Instance.new("UICorner")
-	abCorner.CornerRadius = UDim.new(0, 8)
-	abCorner.Parent = autoButton
+	autoButton.TextSize = 22
 	autoButton.Parent = screenGui
+	applyModernStyle(autoButton, Color3.fromRGB(200, 40, 40), Color3.fromRGB(120, 20, 20))
 
 	-- Filter Button
 	local filterBtn = Instance.new("TextButton")
 	filterBtn.Name = "FilterToggle"
-	filterBtn.Size = UDim2.new(0, 100, 0, 40)
-	filterBtn.Position = UDim2.new(0.9, -110, 0.5, -20)
+	filterBtn.Size = UDim2.new(0, 160, 0, 45) -- Increased width from 120 to 160
+	filterBtn.Position = UDim2.new(0.95, -160, 0.45, 0)
 	filterBtn.Text = "FILTER: ALL"
-	filterBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 100)
+	filterBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 160)
 	filterBtn.TextColor3 = Color3.new(1, 1, 1)
 	filterBtn.Font = Enum.Font.GothamBold
 	filterBtn.TextSize = 14
-	local fbCorner = Instance.new("UICorner")
-	fbCorner.Parent = filterBtn
+	filterBtn.TextWrapped = true
 	filterBtn.Parent = screenGui
+	applyModernStyle(filterBtn, Color3.fromRGB(80, 80, 160), Color3.fromRGB(50, 50, 100))
 
 	-- Result Display
 	local resultLabel = Instance.new("TextLabel")
@@ -86,81 +157,111 @@ local function createUI()
 	resultLabel.BackgroundTransparency = 1
 	resultLabel.TextColor3 = Color3.new(1, 1, 1)
 	resultLabel.Font = Enum.Font.GothamBold
-	resultLabel.TextSize = 30
+	resultLabel.TextSize = 38
+	
+	local shadowLabel = Instance.new("TextLabel")
+	shadowLabel.Name = "ShadowLabel"
+	shadowLabel.Size = UDim2.new(1, 0, 1, 0)
+	shadowLabel.Position = UDim2.new(0, 3, 0, 3) -- Slightly deeper shadow
+	shadowLabel.BackgroundTransparency = 1
+	shadowLabel.TextColor3 = Color3.new(0, 0, 0)
+	shadowLabel.TextTransparency = 0.4
+	shadowLabel.Font = Enum.Font.GothamBold
+	shadowLabel.TextSize = 38
+	shadowLabel.Text = resultLabel.Text
+	shadowLabel.ZIndex = 0
+	shadowLabel.Parent = resultLabel
+	
 	resultLabel.Parent = screenGui
 
 	-- Confirmation UI
 	local confirmFrame = Instance.new("Frame")
 	confirmFrame.Name = "ConfirmFrame"
-	confirmFrame.Size = UDim2.new(0, 300, 0, 100)
-	confirmFrame.Position = UDim2.new(0.5, -150, 0.45, 0)
-	confirmFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+	confirmFrame.Size = UDim2.new(0, 320, 0, 120)
+	confirmFrame.Position = UDim2.new(0.5, -160, 0.45, 0)
+	confirmFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 	confirmFrame.BorderSizePixel = 0
 	confirmFrame.Visible = false
 	local cfCorner = Instance.new("UICorner")
 	cfCorner.Parent = confirmFrame
+	local cfStroke = Instance.new("UIStroke")
+	cfStroke.Thickness = 3
+	cfStroke.Color = Color3.fromRGB(120, 120, 120)
+	cfStroke.Parent = confirmFrame
 	confirmFrame.Parent = screenGui
 
 	local keepBtn = Instance.new("TextButton")
 	keepBtn.Name = "KeepButton"
-	keepBtn.Size = UDim2.new(0, 120, 0, 40)
-	keepBtn.Position = UDim2.new(0.1, 0, 0.3, 0)
+	keepBtn.Size = UDim2.new(0, 130, 0, 45)
+	keepBtn.Position = UDim2.new(0.05, 0, 0.35, 0)
 	keepBtn.Text = "KEEP"
-	keepBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
+	keepBtn.BackgroundColor3 = Color3.fromRGB(40, 200, 40) -- Vibrant Neon Green
 	keepBtn.TextColor3 = Color3.new(1, 1, 1)
 	keepBtn.Font = Enum.Font.GothamBold
 	keepBtn.Parent = confirmFrame
+	applyModernStyle(keepBtn, Color3.fromRGB(40, 200, 40), Color3.fromRGB(20, 120, 20))
 
 	local discardBtn = Instance.new("TextButton")
 	discardBtn.Name = "DiscardButton"
-	discardBtn.Size = UDim2.new(0, 120, 0, 40)
-	discardBtn.Position = UDim2.new(0.55, 0, 0.3, 0)
+	discardBtn.Size = UDim2.new(0, 130, 0, 45)
+	discardBtn.Position = UDim2.new(0.55, 0, 0.35, 0)
 	discardBtn.Text = "DISCARD"
-	discardBtn.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
+	discardBtn.BackgroundColor3 = Color3.fromRGB(220, 40, 40) -- Vibrant Red
 	discardBtn.TextColor3 = Color3.new(1, 1, 1)
 	discardBtn.Font = Enum.Font.GothamBold
 	discardBtn.Parent = confirmFrame
+	applyModernStyle(discardBtn, Color3.fromRGB(220, 40, 40), Color3.fromRGB(140, 20, 20))
 
 	-- Bag Toggle
 	local invToggle = Instance.new("TextButton")
 	invToggle.Name = "InventoryToggle"
-	invToggle.Size = UDim2.new(0, 60, 0, 60)
-	invToggle.Position = UDim2.new(0.02, 0, 0.5, -30)
+	invToggle.Size = UDim2.new(0, 75, 0, 75)
+	invToggle.Position = UDim2.new(0.02, 0, 0.5, -37.5)
 	invToggle.Text = "BAG"
-	invToggle.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+	invToggle.BackgroundColor3 = Color3.fromRGB(220, 180, 40) -- Golden Yellow
 	invToggle.TextColor3 = Color3.new(1, 1, 1)
 	invToggle.Font = Enum.Font.GothamBold
+	invToggle.TextSize = 20
 	local itCorner = Instance.new("UICorner")
 	itCorner.CornerRadius = UDim.new(1, 0)
 	itCorner.Parent = invToggle
+	applyModernStyle(invToggle, Color3.fromRGB(220, 180, 40), Color3.fromRGB(160, 120, 20))
 	invToggle.Parent = screenGui
 
+	-- Inventory Frame
 	local invFrame = Instance.new("Frame")
 	invFrame.Name = "InventoryFrame"
-	invFrame.Size = UDim2.new(0, 250, 0, 400)
-	invFrame.Position = UDim2.new(-0.3, 0, 0.5, -200)
-	invFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-	invFrame.BorderSizePixel = 0
-	local invCorner = Instance.new("UICorner")
-	invCorner.Parent = invFrame
+	invFrame.Size = UDim2.new(0, 300, 0, 450)
+	invFrame.Position = UDim2.new(-0.4, 0, 0.5, -225)
+	invFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
 	invFrame.Parent = screenGui
+	applyModernStyle(invFrame, Color3.fromRGB(40, 40, 45), Color3.fromRGB(25, 25, 30))
+	
+	local invTitle = Instance.new("TextLabel")
+	invTitle.Size = UDim2.new(1, 0, 0, 40)
+	invTitle.Text = "MY COLLECTION"
+	invTitle.TextColor3 = Color3.new(1, 1, 1)
+	invTitle.Font = Enum.Font.GothamBold
+	invTitle.TextSize = 18
+	invTitle.BackgroundTransparency = 1
+	invTitle.Parent = invFrame
 
 	local scroll = Instance.new("ScrollingFrame")
-	scroll.Size = UDim2.new(1, -20, 1, -20)
-	scroll.Position = UDim2.new(0, 10, 0, 10)
+	scroll.Size = UDim2.new(1, -20, 1, -60)
+	scroll.Position = UDim2.new(0, 10, 0, 50)
 	scroll.BackgroundTransparency = 1
 	scroll.CanvasSize = UDim2.new(0, 0, 0, 0)
-	scroll.ScrollBarThickness = 4
+	scroll.ScrollBarThickness = 6
 	scroll.Parent = invFrame
 
 	local layout = Instance.new("UIListLayout")
-	layout.Padding = UDim.new(0, 5)
+	layout.Padding = UDim.new(0, 8)
 	layout.Parent = scroll
 
-	return rollButton, autoButton, filterBtn, resultLabel, confirmFrame, keepBtn, discardBtn, invToggle, invFrame, scroll, flashFrame
+	return rollButton, autoButton, filterBtn, resultLabel, confirmFrame, keepBtn, discardBtn, invToggle, invFrame, scroll, flashFrame, rollContainer
 end
 
-local rollButton, autoButton, filterBtn, resultLabel, confirmFrame, keepBtn, discardBtn, invToggle, invFrame, scroll, flashFrame = createUI()
+local rollButton, autoButton, filterBtn, resultLabel, confirmFrame, keepBtn, discardBtn, invToggle, invFrame, scroll, flashFrame, rollContainer = createUI()
 
 -- VFX Functions
 local function clearAura()
@@ -194,14 +295,12 @@ local function spawnAura(rarityData)
 	local cam = workspace.CurrentCamera
 	local vfxData = rarityData.Vfx
 	
-	-- Create a local part in front of the camera to host particles
 	local auraPart = Instance.new("Part")
 	auraPart.Name = "UIAura"
 	auraPart.Transparency = 1
 	auraPart.CanCollide = false
 	auraPart.Anchored = true
 	auraPart.Size = Vector3.new(1, 1, 1)
-	-- Position it roughly where the ResultLabel is in screen space (center-ish)
 	auraPart.CFrame = cam.CFrame * CFrame.new(0, 2, -10) 
 	auraPart.Parent = workspace
 	
@@ -240,40 +339,104 @@ local rarityOrder = {"Common", "Rare", "Epic", "Legendary", "Mythic"}
 
 local function updateInventory()
 	for _, child in ipairs(scroll:GetChildren()) do
-		if child:IsA("TextLabel") then child:Destroy() end
+		if child:IsA("Frame") then child:Destroy() end
 	end
 	
 	local inventory = getInventory:InvokeServer()
 	for _, item in ipairs(inventory) do
+		local frame = Instance.new("Frame")
+		frame.Size = UDim2.new(1, 0, 0, 45)
+		frame.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+		local fCorner = Instance.new("UICorner")
+		fCorner.Parent = frame
+		
 		local label = Instance.new("TextLabel")
-		label.Size = UDim2.new(1, 0, 0, 30)
-		label.Text = string.format("[%s] %s", item.Rarity:sub(1,1), item.Name)
-		label.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+		label.Size = UDim2.new(1, -10, 1, 0)
+		label.Position = UDim2.new(0, 10, 0, 0)
+		label.Text = string.format("[%s] %s", item.Rarity:upper(), item.Name)
+		label.BackgroundTransparency = 1
 		label.TextColor3 = Cards.Rarities[item.Rarity].Color
-		label.Font = Enum.Font.Gotham
+		label.Font = Enum.Font.GothamBold
 		label.TextSize = 14
-		local lCorner = Instance.new("UICorner")
-		lCorner.Parent = label
-		label.Parent = scroll
+		label.TextXAlignment = Enum.TextXAlignment.Left
+		label.Parent = frame
+		
+		local stripe = Instance.new("Frame")
+		stripe.Size = UDim2.new(0, 4, 0.8, 0)
+		stripe.Position = UDim2.new(0, 0, 0.1, 0)
+		stripe.BackgroundColor3 = Cards.Rarities[item.Rarity].Color
+		stripe.BorderSizePixel = 0
+		stripe.Parent = frame
+		
+		frame.Parent = scroll
 	end
-	scroll.CanvasSize = UDim2.new(0, 0, 0, #inventory * 35)
+	scroll.CanvasSize = UDim2.new(0, 0, 0, #inventory * 53)
+end
+
+-- Button Animations
+local waveTween = nil
+
+local function setRollButtonActive(active)
+	local rollContainer = PlayerGui.RNGGui.RollContainer
+	local rollButton = rollContainer.RollButton
+	local waveOverlay = rollButton:FindFirstChild("WaveOverlay")
+	
+	if active then
+		-- Quick click animation
+		TweenService:Create(rollContainer, TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(0, 180 * 0.9, 0, 50 * 0.9)}):Play()
+		task.delay(0.1, function()
+			TweenService:Create(rollContainer, TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(0, 180, 0, 50)}):Play()
+		end)
+		
+		rollButton.Text = "WAITING..."
+		
+		-- Start Wave Charging
+		if waveOverlay then
+			waveOverlay.Position = UDim2.new(-2, 0, 0, 0)
+			if waveTween then waveTween:Cancel() end
+			waveTween = TweenService:Create(waveOverlay, TweenInfo.new(ROLL_COOLDOWN, Enum.EasingStyle.Linear), {Position = UDim2.new(1, 0, 0, 0)})
+			waveTween:Play()
+		end
+	else
+		-- Stop Wave and Ready
+		if waveTween then 
+			waveTween:Cancel() 
+			waveTween = nil
+		end
+		if waveOverlay then
+			waveOverlay.Position = UDim2.new(-2, 0, 0, 0)
+		end
+		rollButton.Text = autoSpinEnabled and "AUTO ACTIVE" or "ROLL"
+		
+		-- Ready Pop
+		TweenService:Create(rollContainer, TweenInfo.new(0.2, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = UDim2.new(0, 190, 0, 55)}):Play()
+		task.delay(0.2, function()
+			TweenService:Create(rollContainer, TweenInfo.new(0.2), {Size = UDim2.new(0, 180, 0, 50)}):Play()
+		end)
+	end
 end
 
 local function performRoll()
 	if isRolling or confirmFrame.Visible then return false end
+	if tick() - lastRollTime < ROLL_COOLDOWN then return false end
+	
 	isRolling = true
+	lastRollTime = tick()
 	clearAura()
+	setRollButtonActive(true)
 	rollRequested:FireServer()
-	rollButton.Text = "ROLLING..."
 	resultLabel.Text = "Spinning..."
 	resultLabel.TextColor3 = Color3.new(1, 1, 1)
+	if resultLabel:FindFirstChild("ShadowLabel") then
+		resultLabel.ShadowLabel.Text = resultLabel.Text
+	end
 	return true
 end
 
 -- UI Handlers
 invToggle.MouseButton1Click:Connect(function()
 	local isOpen = invFrame.Position.X.Scale > 0
-	invFrame:TweenPosition(UDim2.new(isOpen and -0.3 or 0.08, 0, 0.5, -200), "Out", "Quad", 0.3, true)
+	invFrame:TweenPosition(UDim2.new(isOpen and -0.4 or 0.08, 0, 0.5, -225), "Out", "Quad", 0.4, true)
 	if not isOpen then updateInventory() end
 end)
 
@@ -282,7 +445,23 @@ rollButton.MouseButton1Click:Connect(performRoll)
 autoButton.MouseButton1Click:Connect(function()
 	autoSpinEnabled = not autoSpinEnabled
 	autoButton.Text = autoSpinEnabled and "AUTO: ON" or "AUTO: OFF"
-	autoButton.BackgroundColor3 = autoSpinEnabled and Color3.fromRGB(40, 80, 40) or Color3.fromRGB(80, 40, 40)
+	local activeColor = Color3.fromRGB(40, 200, 40) -- Neon Green
+	local inactiveColor = Color3.fromRGB(200, 40, 40) -- Crimson Red
+	local color = autoSpinEnabled and activeColor or inactiveColor
+	
+	autoButton.BackgroundColor3 = color
+	-- Update gradient in runtime
+	local grad = autoButton:FindFirstChildOfClass("UIGradient")
+	if grad then
+		grad.Color = ColorSequence.new({
+			ColorSequenceKeypoint.new(0, color:Lerp(Color3.new(1,1,1), 0.2)),
+			ColorSequenceKeypoint.new(1, color:Lerp(Color3.new(0,0,0), 0.3))
+		})
+	end
+	
+	if not isRolling and not confirmFrame.Visible then
+		rollButton.Text = autoSpinEnabled and "AUTO ACTIVE" or "ROLL"
+	end
 end)
 
 filterBtn.MouseButton1Click:Connect(function()
@@ -295,35 +474,35 @@ end)
 rollResult.OnClientEvent:Connect(function(item)
 	local rarityData = Cards.Rarities[item.Rarity]
 	
-	-- Dramatic timing for rare cards
 	if rarityData.Rank >= 3 then
-		task.wait(1) -- Dramatic pause
+		task.wait(1)
 	end
 
-	-- BUGFIX: Reset rolling state early to avoid getting stuck
 	isRolling = false
 
-	-- Apply Filter
 	if rarityData.Rank < minRarityRank then
 		resultLabel.Text = "Skipped: " .. item.Name
 		resultLabel.TextColor3 = Color3.new(0.5, 0.5, 0.5)
-		rollButton.Text = "ROLL"
+		if resultLabel:FindFirstChild("ShadowLabel") then
+			resultLabel.ShadowLabel.Text = resultLabel.Text
+		end
+		setRollButtonActive(false)
 		return
 	end
 
-	-- Trigger VFX
 	spawnAura(rarityData)
 	if rarityData.Vfx.Shake then applyShake(rarityData.Rank * 5) end
 	if rarityData.Vfx.Flash then applyFlash(rarityData.Color) end
 
-	-- Normal result display
 	currentCard = item
 	resultLabel.Text = string.format("YOU GOT: %s!\n(%s)", item.Name, item.Rarity)
 	resultLabel.TextColor3 = rarityData.Color
+	if resultLabel:FindFirstChild("ShadowLabel") then
+		resultLabel.ShadowLabel.Text = resultLabel.Text
+	end
 	confirmFrame.Visible = true
 	rollButton.Text = "DECIDE..."
 	
-	-- Pop animation
 	resultLabel.Size = UDim2.new(0, 450, 0, 120)
 	task.delay(0.05, function()
 		resultLabel:TweenSize(UDim2.new(0, 400, 0, 100), "Out", "Back", 0.3, true)
@@ -335,10 +514,12 @@ keepBtn.MouseButton1Click:Connect(function()
 		claimCard:FireServer(currentCard)
 		currentCard = nil
 		confirmFrame.Visible = false
-		isRolling = false
-		rollButton.Text = "ROLL AGAIN"
+		setRollButtonActive(false)
 		resultLabel.Text = "Card saved to Bag!"
 		resultLabel.TextColor3 = Color3.new(0, 1, 0)
+		if resultLabel:FindFirstChild("ShadowLabel") then
+			resultLabel.ShadowLabel.Text = resultLabel.Text
+		end
 		clearAura()
 	end
 end)
@@ -346,21 +527,41 @@ end)
 discardBtn.MouseButton1Click:Connect(function()
 	currentCard = nil
 	confirmFrame.Visible = false
-	isRolling = false
-	rollButton.Text = "ROLL AGAIN"
+	setRollButtonActive(false)
 	resultLabel.Text = "Card discarded."
 	resultLabel.TextColor3 = Color3.new(1, 0, 0)
+	if resultLabel:FindFirstChild("ShadowLabel") then
+		resultLabel.ShadowLabel.Text = resultLabel.Text
+	end
 	clearAura()
 end)
 
 -- AutoSpin Loop
 task.spawn(function()
 	while true do
-		task.wait(3.5)
-		if autoSpinEnabled and not isRolling and not confirmFrame.Visible then
+		-- If auto is active and we are NOT rolling, show wave even while waiting
+		if autoSpinEnabled and not isRolling and not PlayerGui.RNGGui.ConfirmFrame.Visible then
+			local rollContainer = PlayerGui:FindFirstChild("RNGGui") and PlayerGui.RNGGui:FindFirstChild("RollContainer")
+			if rollContainer then
+				local rollButton = rollContainer.RollButton
+				local waveOverlay = rollButton:FindFirstChild("WaveOverlay")
+				if waveOverlay and not waveTween then
+					waveTween = TweenService:Create(waveOverlay, TweenInfo.new(ROLL_COOLDOWN, Enum.EasingStyle.Linear), {Position = UDim2.new(1, 0, 0, 0)})
+					waveTween:Play()
+				end
+			end
+		end
+		
+		task.wait(ROLL_COOLDOWN)
+		
+		if autoSpinEnabled and not isRolling and not PlayerGui.RNGGui.ConfirmFrame.Visible then
+			if waveTween then 
+				waveTween:Cancel() 
+				waveTween = nil 
+			end
 			performRoll()
 		end
 	end
 end)
 
-print("RNG Client with VFX initialized.")
+print("RNG Client with Final Premium UI initialized.")
