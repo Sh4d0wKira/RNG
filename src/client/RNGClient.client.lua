@@ -15,6 +15,9 @@ local minRarityRank = 1
 local currentAura = nil
 local lastRollTime = 0
 local ROLL_COOLDOWN = 2.0
+local totalSpins = 0
+local autoUnlocked = false
+local AUTO_UNLOCK_THRESHOLD = 50
 
 -- Helper for modern styling
 local function applyModernStyle(instance, color1, color2)
@@ -172,6 +175,18 @@ local function createUI()
 	shadowLabel.ZIndex = 0
 	shadowLabel.Parent = resultLabel
 	
+	-- Spin Counter
+	local spinLabel = Instance.new("TextLabel")
+	spinLabel.Name = "SpinLabel"
+	spinLabel.Size = UDim2.new(0, 200, 0, 30)
+	spinLabel.Position = UDim2.new(0.5, -100, 0.8, -10)
+	spinLabel.Text = "TOTAL SPINS: 0"
+	spinLabel.BackgroundTransparency = 1
+	spinLabel.TextColor3 = Color3.new(1, 1, 1)
+	spinLabel.Font = Enum.Font.GothamBold
+	spinLabel.TextSize = 18
+	spinLabel.Parent = screenGui
+
 	resultLabel.Parent = screenGui
 
 	-- Confirmation UI
@@ -258,10 +273,10 @@ local function createUI()
 	layout.Padding = UDim.new(0, 8)
 	layout.Parent = scroll
 
-	return rollButton, autoButton, filterBtn, resultLabel, confirmFrame, keepBtn, discardBtn, invToggle, invFrame, scroll, flashFrame, rollContainer
+	return rollButton, autoButton, filterBtn, resultLabel, confirmFrame, keepBtn, discardBtn, invToggle, invFrame, scroll, flashFrame, rollContainer, spinLabel
 end
 
-local rollButton, autoButton, filterBtn, resultLabel, confirmFrame, keepBtn, discardBtn, invToggle, invFrame, scroll, flashFrame, rollContainer = createUI()
+local rollButton, autoButton, filterBtn, resultLabel, confirmFrame, keepBtn, discardBtn, invToggle, invFrame, scroll, flashFrame, rollContainer, spinLabel = createUI()
 
 -- VFX Functions
 local function clearAura()
@@ -342,7 +357,24 @@ local function updateInventory()
 		if child:IsA("Frame") then child:Destroy() end
 	end
 	
-	local inventory = getInventory:InvokeServer()
+	local data = getInventory:InvokeServer()
+	local inventory = data.Cards
+	totalSpins = data.Spins
+	
+	spinLabel.Text = "TOTAL SPINS: " .. totalSpins
+	
+	if totalSpins < AUTO_UNLOCK_THRESHOLD then
+		autoButton.Text = string.format("LOCKED (%d/%d)", totalSpins, AUTO_UNLOCK_THRESHOLD)
+		autoButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+		autoButton.AutoButtonColor3 = false
+	else
+		autoUnlocked = true
+		if not autoSpinEnabled then
+			autoButton.Text = "AUTO: OFF"
+			autoButton.BackgroundColor3 = Color3.fromRGB(200, 40, 40)
+		end
+	end
+
 	for _, item in ipairs(inventory) do
 		local frame = Instance.new("Frame")
 		frame.Size = UDim2.new(1, 0, 0, 45)
@@ -442,7 +474,35 @@ end)
 
 rollButton.MouseButton1Click:Connect(performRoll)
 
+local autoRevertDelay = nil
+
 autoButton.MouseButton1Click:Connect(function()
+	if not autoUnlocked then
+		-- Show how many more needed
+		local remaining = AUTO_UNLOCK_THRESHOLD - totalSpins
+		autoButton.Text = string.format("Need %d more!", remaining)
+		
+		-- Shake button
+		local startPos = autoButton.Position
+		task.spawn(function()
+			for i = 1, 6 do
+				autoButton.Position = startPos + UDim2.new(0, math.random(-5, 5), 0, 0)
+				task.wait(0.05)
+			end
+			autoButton.Position = startPos
+		end)
+		
+		-- Revert after 2 seconds
+		if autoRevertDelay then task.cancel(autoRevertDelay) end
+		autoRevertDelay = task.delay(2, function()
+			if not autoUnlocked then
+				autoButton.Text = string.format("LOCKED (%d/%d)", totalSpins, AUTO_UNLOCK_THRESHOLD)
+			end
+			autoRevertDelay = nil
+		end)
+		return 
+	end
+
 	autoSpinEnabled = not autoSpinEnabled
 	autoButton.Text = autoSpinEnabled and "AUTO: ON" or "AUTO: OFF"
 	local activeColor = Color3.fromRGB(40, 200, 40) -- Neon Green
@@ -493,6 +553,26 @@ rollResult.OnClientEvent:Connect(function(item)
 	spawnAura(rarityData)
 	if rarityData.Vfx.Shake then applyShake(rarityData.Rank * 5) end
 	if rarityData.Vfx.Flash then applyFlash(rarityData.Color) end
+
+	-- Update Spins
+	totalSpins = totalSpins + 1
+	spinLabel.Text = "TOTAL SPINS: " .. totalSpins
+	
+	if not autoUnlocked and totalSpins >= AUTO_UNLOCK_THRESHOLD then
+		autoUnlocked = true
+		autoButton.Text = "AUTO UNLOCKED!"
+		autoButton.BackgroundColor3 = Color3.fromRGB(40, 200, 40)
+		TweenService:Create(autoButton, TweenInfo.new(1, Enum.EasingStyle.Elastic), {Size = UDim2.new(0, 200, 0, 60)}):Play()
+		task.delay(1.5, function()
+			TweenService:Create(autoButton, TweenInfo.new(0.5), {Size = UDim2.new(0, 180, 0, 50)}):Play()
+			if not autoSpinEnabled then
+				autoButton.Text = "AUTO: OFF"
+				autoButton.BackgroundColor3 = Color3.fromRGB(200, 40, 40)
+			end
+		end)
+	elseif not autoUnlocked then
+		autoButton.Text = string.format("LOCKED (%d/%d)", totalSpins, AUTO_UNLOCK_THRESHOLD)
+	end
 
 	currentCard = item
 	resultLabel.Text = string.format("YOU GOT: %s!\n(%s)", item.Name, item.Rarity)
@@ -564,4 +644,5 @@ task.spawn(function()
 	end
 end)
 
-print("RNG Client with Final Premium UI initialized.")
+print("RNG Client initialized.")
+updateInventory() -- Initial sync

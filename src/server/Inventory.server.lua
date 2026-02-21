@@ -6,7 +6,7 @@ local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Remotes = require(Shared:WaitForChild("Remotes"))
 
 local InventoryStore = DataStoreService:GetDataStore("PlayerInventories_v1")
-local Inventories = {} -- Local cache: [UserId] = { {Name = "Goku", Rarity = "Common"}, ... }
+local Inventories = {} -- Local cache: [UserId] = { Cards = {}, Spins = 0 }
 
 local function getRemotesFolder()
 	return ReplicatedStorage:WaitForChild("Remotes")
@@ -37,10 +37,36 @@ local function loadPlayerData(player)
 	end)
 
 	if success then
-		Inventories[userId] = data or {}
-		print("[DataStore] Data loaded for " .. player.Name .. " (" .. #Inventories[userId] .. " items)")
+		-- Migration and initialization
+		if data then
+			if data.Cards then
+				-- Already in new format
+				Inventories[userId] = data
+			else
+				-- Old format was just a list of cards
+				Inventories[userId] = {
+					Cards = data,
+					Spins = 0
+				}
+			end
+		else
+			-- New player
+			Inventories[userId] = { Cards = {}, Spins = 0 }
+		end
+
+		-- Sync to leaderstats
+		local stats = player:FindFirstChild("leaderstats") or Instance.new("Folder")
+		stats.Name = "leaderstats"
+		stats.Parent = player
+		
+		local spinsStat = stats:FindFirstChild("Spins") or Instance.new("IntValue")
+		spinsStat.Name = "Spins"
+		spinsStat.Value = Inventories[userId].Spins
+		spinsStat.Parent = stats
+
+		print("[DataStore] Data loaded for " .. player.Name .. " (" .. #Inventories[userId].Cards .. " cards, " .. Inventories[userId].Spins .. " spins)")
 	else
-		Inventories[userId] = {}
+		Inventories[userId] = { Cards = {}, Spins = 0 }
 		warn("[DataStore] Failed to load data for " .. player.Name .. ": " .. tostring(data))
 	end
 end
@@ -52,25 +78,48 @@ Players.PlayerRemoving:Connect(savePlayerData)
 -- Handle Inventory retrieval
 remotesFolder:WaitForChild(Remotes.GetInventory).OnServerInvoke = function(player)
 	if not Inventories[player.UserId] then
-		loadPlayerData(player) -- Fallback if PlayerAdded didn't catch it
+		loadPlayerData(player) 
 	end
 	return Inventories[player.UserId]
 end
+
+-- Function to increment spins (called by RNGService)
+local function incrementSpins(player)
+	local userId = player.UserId
+	if not Inventories[userId] then return end
+	
+	Inventories[userId].Spins = Inventories[userId].Spins + 1
+	
+	-- Update leaderstats
+	local stats = player:FindFirstChild("leaderstats")
+	if stats then
+		local spinsStat = stats:FindFirstChild("Spins")
+		if spinsStat then
+			spinsStat.Value = Inventories[userId].Spins
+		end
+	end
+	
+	-- No need to save on every single spin to avoid throttling, 
+	-- PlayerRemoving and BindToClose will handle it, but maybe save every 10?
+	if Inventories[userId].Spins % 5 == 0 then
+		task.spawn(savePlayerData, player)
+	end
+end
+
+-- Export for RNGService
+_G.IncrementSpins = incrementSpins
 
 -- Handle Card claiming
 remotesFolder:WaitForChild(Remotes.ClaimCard).OnServerEvent:Connect(function(player, cardData)
 	local userId = player.UserId
 	if not Inventories[userId] then
-		Inventories[userId] = {}
+		Inventories[userId] = { Cards = {}, Spins = 0 }
 	end
 	
-	table.insert(Inventories[userId], cardData)
+	table.insert(Inventories[userId].Cards, cardData)
 	print(string.format("[Inventory] %s saved card: %s", player.Name, cardData.Name))
 	
-	-- Proactive save for critical items (Optional: could also wait for PlayerRemoving)
-	task.spawn(function()
-		savePlayerData(player)
-	end)
+	task.spawn(savePlayerData, player)
 end)
 
 -- BindToClose for server shutdowns

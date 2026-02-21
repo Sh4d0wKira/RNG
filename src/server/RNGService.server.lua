@@ -77,6 +77,9 @@ end
 
 -- Listener for client requests
 remotesFolder.RollRequested.OnServerEvent:Connect(function(player)
+	if _G.IncrementSpins then
+		_G.IncrementSpins(player)
+	end
 	RNGService.Roll(player)
 end)
 
