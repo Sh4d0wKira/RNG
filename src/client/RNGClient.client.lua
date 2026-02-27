@@ -75,6 +75,7 @@ local function createUI()
 	local screenGui = Instance.new("ScreenGui")
 	screenGui.Name = "RNGGui"
 	screenGui.ResetOnSpawn = false
+	screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling -- Guarantee layer control
 	screenGui.Parent = PlayerGui
 
 	-- Flash Frame
@@ -233,21 +234,100 @@ local function createUI()
 	discardBtn.Parent = confirmFrame
 	applyModernStyle(discardBtn, Color3.fromRGB(220, 40, 40), Color3.fromRGB(140, 20, 20))
 
-	-- Bag Toggle
-	local invToggle = Instance.new("TextButton")
-	invToggle.Name = "InventoryToggle"
-	invToggle.Size = UDim2.new(0, 75, 0, 75)
-	invToggle.Position = UDim2.new(0.02, 0, 0.5, -37.5)
-	invToggle.Text = "BAG"
-	invToggle.BackgroundColor3 = Color3.fromRGB(220, 180, 40) -- Golden Yellow
-	invToggle.TextColor3 = Color3.new(1, 1, 1)
-	invToggle.Font = Enum.Font.GothamBold
-	invToggle.TextSize = 20
-	local itCorner = Instance.new("UICorner")
-	itCorner.CornerRadius = UDim.new(1, 0)
-	itCorner.Parent = invToggle
-	applyModernStyle(invToggle, Color3.fromRGB(220, 180, 40), Color3.fromRGB(160, 120, 20))
-	invToggle.Parent = screenGui
+	-- Sidebar Container
+	local sidebar = Instance.new("Frame")
+	sidebar.Name = "Sidebar"
+	sidebar.Size = UDim2.new(0, 60, 0, 240)
+	sidebar.Position = UDim2.new(0.02, 0, 0.5, -120)
+	sidebar.BackgroundTransparency = 1
+	sidebar.Parent = screenGui
+
+	local sideLayout = Instance.new("UIListLayout")
+	sideLayout.Padding = UDim.new(0, 10)
+	sideLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	sideLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+	sideLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	sideLayout.Parent = sidebar
+
+	-- Tooltip Label
+	local tooltip = Instance.new("TextLabel")
+	tooltip.Name = "Tooltip"
+	tooltip.Size = UDim2.new(0, 100, 0, 30)
+	tooltip.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+	tooltip.TextColor3 = Color3.new(1, 1, 1)
+	tooltip.Font = Enum.Font.GothamBold
+	tooltip.TextSize = 14
+	tooltip.Visible = false
+	tooltip.ZIndex = 10
+	local ttCorner = Instance.new("UICorner")
+	ttCorner.CornerRadius = UDim.new(0, 6)
+	ttCorner.Parent = tooltip
+	local ttStroke = Instance.new("UIStroke")
+	ttStroke.Thickness = 1.5
+	ttStroke.Color = Color3.fromRGB(100, 100, 110)
+	ttStroke.Parent = tooltip
+	tooltip.Parent = screenGui
+
+	local function setupSidebarButton(name, iconId, layoutOrder, color1, color2)
+		-- Base Container (Handles Style & Layout)
+		local base = Instance.new("Frame")
+		base.Name = name .. "Base"
+		base.Size = UDim2.new(0, 50, 0, 50)
+		base.BackgroundColor3 = color1
+		base.LayoutOrder = layoutOrder
+		
+		local corner = Instance.new("UICorner")
+		corner.CornerRadius = UDim.new(0, 12)
+		corner.Parent = base
+
+		applyModernStyle(base, color1, color2)
+
+		-- Invisible Button (Handles full frame input)
+		local btn = Instance.new("TextButton")
+		btn.Name = "Hitbox"
+		btn.Size = UDim2.new(1, 0, 1, 0)
+		btn.BackgroundTransparency = 1
+		btn.Text = ""
+		btn.ZIndex = 20
+		btn.Parent = base
+
+		-- Centered Icon Layer (Fixed proportions 55%)
+		local icon = Instance.new("ImageLabel")
+		icon.Name = "Icon"
+		icon.Size = UDim2.new(0.55, 0, 0.55, 0)
+		icon.Position = UDim2.new(0.5, 0, 0.5, 0)
+		icon.AnchorPoint = Vector2.new(0.5, 0.5)
+		icon.BackgroundTransparency = 1
+		icon.Image = iconId
+		icon.ImageColor3 = Color3.new(1, 1, 1)
+		icon.ZIndex = 10
+		icon.ScaleType = Enum.ScaleType.Fit
+		icon.Parent = base
+
+		base.Parent = sidebar
+
+		-- Interaction logic
+		btn.MouseEnter:Connect(function()
+			tooltip.Text = name:upper()
+			tooltip.Position = UDim2.new(0, sidebar.AbsolutePosition.X + 65, 0, base.AbsolutePosition.Y + 10)
+			tooltip.Visible = true
+			TweenService:Create(base, TweenInfo.new(0.2), {BackgroundColor3 = color1:Lerp(Color3.new(1, 1, 1), 0.1)}):Play()
+		end)
+		
+		btn.MouseLeave:Connect(function()
+			tooltip.Visible = false
+			TweenService:Create(base, TweenInfo.new(0.2), {BackgroundColor3 = color1}):Play()
+		end)
+
+		return btn
+	end
+
+	-- VERIFIED LUCIDE ICONS (GUARANTEED VISIBILITY)
+	-- Order: Inventory (1), Missions (2), Shop (3), Settings (4)
+	local invToggle = setupSidebarButton("Bag", "rbxassetid://7734056747", 1, Color3.fromRGB(220, 180, 40), Color3.fromRGB(160, 120, 20))    -- shopping-bag
+	local missionsBtn = setupSidebarButton("Missions", "rbxassetid://7733920117", 2, Color3.fromRGB(80, 160, 220), Color3.fromRGB(40, 80, 120)) -- clipboard-list
+	local shopBtn = setupSidebarButton("Shop", "rbxassetid://7734056813", 3, Color3.fromRGB(220, 80, 160), Color3.fromRGB(120, 40, 80))        -- shopping-cart
+	local settingsBtn = setupSidebarButton("Settings", "rbxassetid://7734053495", 4, Color3.fromRGB(140, 140, 150), Color3.fromRGB(80, 80, 90))-- settings
 
 	-- Inventory Frame
 	local invFrame = Instance.new("Frame")
@@ -347,10 +427,10 @@ local function createUI()
 	lbLayout.Padding = UDim.new(0, 4)
 	lbLayout.Parent = lbScroll
 
-	return rollButton, autoButton, filterBtn, resultLabel, confirmFrame, keepBtn, discardBtn, invToggle, invFrame, scroll, flashFrame, rollContainer, lbScroll, lbToggle, lbFrame, pCountLabel, luckLabel
+	return rollButton, autoButton, filterBtn, resultLabel, confirmFrame, keepBtn, discardBtn, invToggle, invFrame, scroll, flashFrame, rollContainer, lbScroll, lbToggle, lbFrame, pCountLabel, luckLabel, missionsBtn, shopBtn, settingsBtn
 end
 
-local rollButton, autoButton, filterBtn, resultLabel, confirmFrame, keepBtn, discardBtn, invToggle, invFrame, scroll, flashFrame, _rollContainer, lbScroll, lbToggle, lbFrame, pCountLabel, luckLabel = createUI()
+local rollButton, autoButton, filterBtn, resultLabel, confirmFrame, keepBtn, discardBtn, invToggle, invFrame, scroll, flashFrame, _rollContainer, lbScroll, lbToggle, lbFrame, pCountLabel, luckLabel, missionsBtn, shopBtn, settingsBtn = createUI()
 
 -- VFX Functions
 local function clearAura()
@@ -762,6 +842,21 @@ invToggle.MouseButton1Click:Connect(function()
 	local isOpen = invFrame.Position.X.Scale > 0
 	invFrame:TweenPosition(UDim2.new(isOpen and -0.4 or 0.08, 0, 0.5, -225), "Out", "Quad", 0.4, true)
 	if not isOpen then updateInventory() end
+end)
+
+missionsBtn.MouseButton1Click:Connect(function()
+	print("Missions clicked - (Coming soon!)")
+	-- Logic for missions window will go here
+end)
+
+shopBtn.MouseButton1Click:Connect(function()
+	print("Shop clicked - (Coming soon!)")
+	-- Logic for shop window will go here
+end)
+
+settingsBtn.MouseButton1Click:Connect(function()
+	print("Settings clicked - (Coming soon!)")
+	-- Logic for settings window will go here
 end)
 
 rollButton.MouseButton1Click:Connect(performRoll)
