@@ -491,6 +491,8 @@ local function updateInventory()
 end
 
 -- Leaderboard logic
+local playerRows = {}
+
 local function createCornerAccents(parent, color)
 	local positions = {
 		UDim2.new(0, -1, 0, -1),
@@ -507,6 +509,7 @@ local function createCornerAccents(parent, color)
 
 	for i, pos in ipairs(positions) do
 		local h = Instance.new("Frame")
+		h.Name = "Accent"
 		h.BorderSizePixel = 0
 		h.BackgroundColor3 = color
 		h.Position = pos
@@ -515,6 +518,7 @@ local function createCornerAccents(parent, color)
 		h.Parent = parent
 		
 		local v = Instance.new("Frame")
+		v.Name = "Accent"
 		v.BorderSizePixel = 0
 		v.BackgroundColor3 = color
 		v.Position = pos
@@ -525,10 +529,6 @@ local function createCornerAccents(parent, color)
 end
 
 local function updateLeaderboard()
-	for _, child in ipairs(lbScroll:GetChildren()) do
-		if child:IsA("Frame") then child:Destroy() end
-	end
-
 	local players = Players:GetPlayers()
 	pCountLabel.Text = tostring(#players)
 	
@@ -538,77 +538,117 @@ local function updateLeaderboard()
 		return aSpins > bSpins
 	end)
 
+	local currentUIDs = {}
+	
 	for i, p in ipairs(players) do
+		local uid = tostring(p.UserId)
+		currentUIDs[uid] = true
 		local spins = p:FindFirstChild("leaderstats") and p.leaderstats:FindFirstChild("Spins") and p.leaderstats.Spins.Value or 0
 		local isTopPlayer = (i == 1)
 		
-		local row = Instance.new("Frame")
-		row.Size = UDim2.new(1, 0, 0, 45)
-		row.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
-		row.BackgroundTransparency = 0.2
-		local rCorner = Instance.new("UICorner")
-		rCorner.CornerRadius = UDim.new(0, 4)
-		rCorner.Parent = row
-		
-		-- Avatar
-		local avatar = Instance.new("ImageLabel")
-		avatar.Size = UDim2.new(0, 35, 0, 35)
-		avatar.Position = UDim2.new(0, 5, 0.5, -17.5)
-		avatar.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
-		avatar.Image = Players:GetUserThumbnailAsync(p.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size48x48)
-		local aCorner = Instance.new("UICorner")
-		aCorner.CornerRadius = UDim.new(0, 4)
-		aCorner.Parent = avatar
-		avatar.Parent = row
-		
-		local nameLabel = Instance.new("TextLabel")
-		nameLabel.Size = UDim2.new(0.5, 0, 1, 0)
-		nameLabel.Position = UDim2.new(0, 45, 0, 0)
-		nameLabel.Text = p.DisplayName:upper()
-		nameLabel.TextColor3 = isTopPlayer and Color3.fromRGB(80, 255, 150) or Color3.new(1, 1, 1)
-		nameLabel.Font = Enum.Font.GothamBold
-		nameLabel.TextSize = 13
-		nameLabel.TextXAlignment = Enum.TextXAlignment.Left
-		nameLabel.BackgroundTransparency = 1
-		nameLabel.Parent = row
-		
-		local spinValue = Instance.new("TextLabel")
-		spinValue.Size = UDim2.new(0.35, 0, 1, 0)
-		spinValue.Position = UDim2.new(0.6, 0, 0, 0)
-		spinValue.Text = string.format("%d", spins):gsub("(%d)(%d%d%d)$", "%1,%2") -- Pseudo comma
-		spinValue.TextColor3 = isTopPlayer and Color3.fromRGB(80, 255, 150) or Color3.new(1, 1, 1)
-		spinValue.Font = Enum.Font.GothamBold
-		spinValue.TextSize = 13
-		spinValue.TextXAlignment = Enum.TextXAlignment.Right
-		spinValue.BackgroundTransparency = 1
-		spinValue.Parent = row
-		
-		if isTopPlayer then
-			createCornerAccents(row, Color3.fromRGB(80, 255, 150))
-			local stroke = Instance.new("UIStroke")
-			stroke.Color = Color3.fromRGB(80, 255, 150)
-			stroke.Thickness = 1
-			stroke.Transparency = 0.6
-			stroke.Parent = row
+		local rowData = playerRows[uid]
+		if not rowData then
+			local row = Instance.new("Frame")
+			row.Size = UDim2.new(1, 0, 0, 45)
+			row.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
+			row.BackgroundTransparency = 0.2
+			local rCorner = Instance.new("UICorner")
+			rCorner.CornerRadius = UDim.new(0, 4)
+			rCorner.Parent = row
 			
-			-- Avatar border
-			local astroke = Instance.new("UIStroke")
-			astroke.Color = Color3.fromRGB(80, 255, 150)
-			astroke.Thickness = 2
-			astroke.Parent = avatar
-		else
-			createCornerAccents(row, Color3.new(1, 1, 1))
-			if p == player then
-				local stroke = Instance.new("UIStroke")
-				stroke.Color = Color3.new(1, 1, 1)
-				stroke.Thickness = 1
-				stroke.Transparency = 0.4
-				stroke.Parent = row
-			end
+			local avatar = Instance.new("ImageLabel")
+			avatar.Size = UDim2.new(0, 35, 0, 35)
+			avatar.Position = UDim2.new(0, 5, 0.5, -17.5)
+			avatar.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+			avatar.Image = Players:GetUserThumbnailAsync(p.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size48x48)
+			local aCorner = Instance.new("UICorner")
+			aCorner.CornerRadius = UDim.new(0, 4)
+			aCorner.Parent = avatar
+			avatar.Parent = row
+			
+			local nameLabel = Instance.new("TextLabel")
+			nameLabel.Size = UDim2.new(0.5, 0, 1, 0)
+			nameLabel.Position = UDim2.new(0, 45, 0, 0)
+			nameLabel.Text = p.DisplayName:upper()
+			nameLabel.Font = Enum.Font.GothamBold
+			nameLabel.TextSize = 13
+			nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+			nameLabel.BackgroundTransparency = 1
+			nameLabel.Parent = row
+			
+			local spinValue = Instance.new("TextLabel")
+			spinValue.Size = UDim2.new(0.35, 0, 1, 0)
+			spinValue.Position = UDim2.new(0.6, 0, 0, 0)
+			spinValue.Font = Enum.Font.GothamBold
+			spinValue.TextSize = 13
+			spinValue.TextXAlignment = Enum.TextXAlignment.Right
+			spinValue.BackgroundTransparency = 1
+			spinValue.Parent = row
+			
+			row.Parent = lbScroll
+			
+			rowData = {
+				Frame = row,
+				Name = nameLabel,
+				Value = spinValue,
+				Avatar = avatar,
+				IsTop = nil
+			}
+			playerRows[uid] = rowData
 		end
 		
-		row.Parent = lbScroll
+		-- Update Content
+		rowData.Value.Text = string.format("%d", spins):gsub("(%d)(%d%d%d)$", "%1,%2")
+		rowData.Frame.LayoutOrder = i
+		
+		-- Update Style if Needed
+		if rowData.IsTop ~= isTopPlayer then
+			rowData.IsTop = isTopPlayer
+			
+			-- Cleanup previous decorations
+			for _, child in ipairs(rowData.Frame:GetChildren()) do
+				if child.Name == "Accent" or child:IsA("UIStroke") then child:Destroy() end
+			end
+			for _, child in ipairs(rowData.Avatar:GetChildren()) do
+				if child:IsA("UIStroke") then child:Destroy() end
+			end
+			
+			rowData.Name.TextColor3 = isTopPlayer and Color3.fromRGB(80, 255, 150) or Color3.new(1, 1, 1)
+			rowData.Value.TextColor3 = isTopPlayer and Color3.fromRGB(80, 255, 150) or Color3.new(1, 1, 1)
+			
+			if isTopPlayer then
+				createCornerAccents(rowData.Frame, Color3.fromRGB(80, 255, 150))
+				local stroke = Instance.new("UIStroke")
+				stroke.Color = Color3.fromRGB(80, 255, 150)
+				stroke.Thickness = 1
+				stroke.Transparency = 0.6
+				stroke.Parent = rowData.Frame
+				
+				local astroke = Instance.new("UIStroke")
+				astroke.Color = Color3.fromRGB(80, 255, 150)
+				astroke.Thickness = 2
+				astroke.Parent = rowData.Avatar
+			else
+				createCornerAccents(rowData.Frame, Color3.new(1, 1, 1))
+				if p == player then
+					local stroke = Instance.new("UIStroke")
+					stroke.Color = Color3.new(1, 1, 1)
+					stroke.Thickness = 1
+					stroke.Transparency = 0.4
+					stroke.Parent = rowData.Frame
+				end
+			end
+		end
 	end
+	
+	-- Cleanup
+	for uid, data in pairs(playerRows) do
+		if not currentUIDs[uid] then
+			data.Frame:Destroy()
+			playerRows[uid] = nil
+		end
+	end
+	
 	lbScroll.CanvasSize = UDim2.new(0, 0, 0, #players * 49)
 end
 
