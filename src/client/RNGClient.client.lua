@@ -1,6 +1,11 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
+local StarterGui = game:GetService("StarterGui")
+local UserInputService = game:GetService("UserInputService")
+
+-- Disable default PlayerList
+StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList, false)
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Cards = require(Shared:WaitForChild("Cards"))
@@ -175,18 +180,6 @@ local function createUI()
 	shadowLabel.ZIndex = 0
 	shadowLabel.Parent = resultLabel
 	
-	-- Spin Counter
-	local spinLabel = Instance.new("TextLabel")
-	spinLabel.Name = "SpinLabel"
-	spinLabel.Size = UDim2.new(0, 200, 0, 30)
-	spinLabel.Position = UDim2.new(0.5, -100, 0.8, -10)
-	spinLabel.Text = "TOTAL SPINS: 0"
-	spinLabel.BackgroundTransparency = 1
-	spinLabel.TextColor3 = Color3.new(1, 1, 1)
-	spinLabel.Font = Enum.Font.GothamBold
-	spinLabel.TextSize = 18
-	spinLabel.Parent = screenGui
-
 	resultLabel.Parent = screenGui
 
 	-- Confirmation UI
@@ -269,14 +262,82 @@ local function createUI()
 	scroll.ScrollBarThickness = 6
 	scroll.Parent = invFrame
 
-	local layout = Instance.new("UIListLayout")
-	layout.Padding = UDim.new(0, 8)
-	layout.Parent = scroll
+	-- Leaderboard Frame
+	local lbFrame = Instance.new("Frame")
+	lbFrame.Name = "LeaderboardFrame"
+	lbFrame.Size = UDim2.new(0, 240, 0, 300)
+	lbFrame.Position = UDim2.new(1, -250, 0.02, 0)
+	lbFrame.BackgroundTransparency = 1
+	lbFrame.Parent = screenGui
 
-	return rollButton, autoButton, filterBtn, resultLabel, confirmFrame, keepBtn, discardBtn, invToggle, invFrame, scroll, flashFrame, rollContainer, spinLabel
+	-- Leaderboard Toggle Button (Now relative to Frame)
+	local lbToggle = Instance.new("TextButton")
+	lbToggle.Name = "LeaderboardToggle"
+	lbToggle.Size = UDim2.new(0, 25, 0, 40)
+	lbToggle.Position = UDim2.new(0, -30, 0, 0) -- Left side of frame
+	lbToggle.Text = ">"
+	lbToggle.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+	lbToggle.TextColor3 = Color3.new(1, 1, 1)
+	lbToggle.Font = Enum.Font.GothamBold
+	lbToggle.TextSize = 14
+	lbToggle.Parent = lbFrame
+	applyModernStyle(lbToggle, Color3.fromRGB(50, 50, 60), Color3.fromRGB(30, 30, 35))
+
+	-- Header Frame
+	local lbHeader = Instance.new("Frame")
+	lbHeader.Name = "Header"
+	lbHeader.Size = UDim2.new(1, 0, 0, 35)
+	lbHeader.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
+	lbHeader.Parent = lbFrame
+	applyModernStyle(lbHeader, Color3.fromRGB(50, 50, 60), Color3.fromRGB(35, 35, 45))
+
+	local pCountFrame = Instance.new("Frame")
+	pCountFrame.Name = "CountCircle"
+	pCountFrame.Size = UDim2.new(0, 25, 0, 25)
+	pCountFrame.Position = UDim2.new(0, 5, 0.5, -12.5)
+	pCountFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+	local pcc = Instance.new("UICorner")
+	pcc.CornerRadius = UDim.new(1, 0)
+	pcc.Parent = pCountFrame
+	pCountFrame.Parent = lbHeader
+
+	local pCountLabel = Instance.new("TextLabel")
+	pCountLabel.Name = "Count"
+	pCountLabel.Size = UDim2.new(1, 0, 1, 0)
+	pCountLabel.Text = "0"
+	pCountLabel.TextColor3 = Color3.new(1, 1, 1)
+	pCountLabel.Font = Enum.Font.GothamBold
+	pCountLabel.TextSize = 12
+	pCountLabel.BackgroundTransparency = 1
+	pCountLabel.Parent = pCountFrame
+
+	local headerLabel = Instance.new("TextLabel")
+	headerLabel.Size = UDim2.new(0.8, 0, 1, 0)
+	headerLabel.Position = UDim2.new(0.15, 0, 0, 0)
+	headerLabel.Text = "USER   ||   ROLLS"
+	headerLabel.TextColor3 = Color3.new(1, 1, 1)
+	headerLabel.Font = Enum.Font.GothamBold
+	headerLabel.TextSize = 14
+	headerLabel.BackgroundTransparency = 1
+	headerLabel.Parent = lbHeader
+
+	local lbScroll = Instance.new("ScrollingFrame")
+	lbScroll.Name = "LeaderboardScroll"
+	lbScroll.Size = UDim2.new(1, 0, 1, -40)
+	lbScroll.Position = UDim2.new(0, 0, 0, 40)
+	lbScroll.BackgroundTransparency = 1
+	lbScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+	lbScroll.ScrollBarThickness = 0
+	lbScroll.Parent = lbFrame
+
+	local lbLayout = Instance.new("UIListLayout")
+	lbLayout.Padding = UDim.new(0, 4)
+	lbLayout.Parent = lbScroll
+
+	return rollButton, autoButton, filterBtn, resultLabel, confirmFrame, keepBtn, discardBtn, invToggle, invFrame, scroll, flashFrame, rollContainer, lbScroll, lbToggle, lbFrame, pCountLabel
 end
 
-local rollButton, autoButton, filterBtn, resultLabel, confirmFrame, keepBtn, discardBtn, invToggle, invFrame, scroll, flashFrame, rollContainer, spinLabel = createUI()
+local rollButton, autoButton, filterBtn, resultLabel, confirmFrame, keepBtn, discardBtn, invToggle, invFrame, scroll, flashFrame, _rollContainer, lbScroll, lbToggle, lbFrame, pCountLabel = createUI()
 
 -- VFX Functions
 local function clearAura()
@@ -361,8 +422,6 @@ local function updateInventory()
 	local inventory = data.Cards
 	totalSpins = data.Spins
 	
-	spinLabel.Text = "TOTAL SPINS: " .. totalSpins
-	
 	if totalSpins < AUTO_UNLOCK_THRESHOLD then
 		autoButton.Text = string.format("LOCKED (%d/%d)", totalSpins, AUTO_UNLOCK_THRESHOLD)
 		autoButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
@@ -404,6 +463,173 @@ local function updateInventory()
 	end
 	scroll.CanvasSize = UDim2.new(0, 0, 0, #inventory * 53)
 end
+
+-- Leaderboard logic
+local function createCornerAccents(parent, color)
+	local positions = {
+		UDim2.new(0, -1, 0, -1),
+		UDim2.new(1, -5, 0, -1),
+		UDim2.new(0, -1, 1, -5),
+		UDim2.new(1, -5, 1, -5)
+	}
+	local sizes = {
+		{UDim2.new(0, 6, 0, 2), UDim2.new(0, 2, 0, 6)},
+		{UDim2.new(0, 6, 0, 2), UDim2.new(0, 2, 0, 6)},
+		{UDim2.new(0, 6, 0, 2), UDim2.new(0, 2, 0, 6)},
+		{UDim2.new(0, 6, 0, 2), UDim2.new(0, 2, 0, 6)}
+	}
+
+	for i, pos in ipairs(positions) do
+		local h = Instance.new("Frame")
+		h.BorderSizePixel = 0
+		h.BackgroundColor3 = color
+		h.Position = pos
+		h.Size = sizes[i][1]
+		if i == 2 or i == 4 then h.AnchorPoint = Vector2.new(1, 0) end
+		h.Parent = parent
+		
+		local v = Instance.new("Frame")
+		v.BorderSizePixel = 0
+		v.BackgroundColor3 = color
+		v.Position = pos
+		v.Size = sizes[i][2]
+		if i == 2 or i == 4 then v.AnchorPoint = Vector2.new(1, 0) end
+		v.Parent = parent
+	end
+end
+
+local function updateLeaderboard()
+	for _, child in ipairs(lbScroll:GetChildren()) do
+		if child:IsA("Frame") then child:Destroy() end
+	end
+
+	local players = Players:GetPlayers()
+	pCountLabel.Text = tostring(#players)
+	
+	table.sort(players, function(a, b)
+		local aSpins = a:FindFirstChild("leaderstats") and a.leaderstats:FindFirstChild("Spins") and a.leaderstats.Spins.Value or 0
+		local bSpins = b:FindFirstChild("leaderstats") and b.leaderstats:FindFirstChild("Spins") and b.leaderstats.Spins.Value or 0
+		return aSpins > bSpins
+	end)
+
+	for i, p in ipairs(players) do
+		local spins = p:FindFirstChild("leaderstats") and p.leaderstats:FindFirstChild("Spins") and p.leaderstats.Spins.Value or 0
+		local isTopPlayer = (i == 1)
+		
+		local row = Instance.new("Frame")
+		row.Size = UDim2.new(1, 0, 0, 45)
+		row.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
+		row.BackgroundTransparency = 0.2
+		local rCorner = Instance.new("UICorner")
+		rCorner.CornerRadius = UDim.new(0, 4)
+		rCorner.Parent = row
+		
+		-- Avatar
+		local avatar = Instance.new("ImageLabel")
+		avatar.Size = UDim2.new(0, 35, 0, 35)
+		avatar.Position = UDim2.new(0, 5, 0.5, -17.5)
+		avatar.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+		avatar.Image = Players:GetUserThumbnailAsync(p.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size48x48)
+		local aCorner = Instance.new("UICorner")
+		aCorner.CornerRadius = UDim.new(0, 4)
+		aCorner.Parent = avatar
+		avatar.Parent = row
+		
+		local nameLabel = Instance.new("TextLabel")
+		nameLabel.Size = UDim2.new(0.5, 0, 1, 0)
+		nameLabel.Position = UDim2.new(0, 45, 0, 0)
+		nameLabel.Text = p.DisplayName:upper()
+		nameLabel.TextColor3 = isTopPlayer and Color3.fromRGB(80, 255, 150) or Color3.new(1, 1, 1)
+		nameLabel.Font = Enum.Font.GothamBold
+		nameLabel.TextSize = 13
+		nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+		nameLabel.BackgroundTransparency = 1
+		nameLabel.Parent = row
+		
+		local spinValue = Instance.new("TextLabel")
+		spinValue.Size = UDim2.new(0.35, 0, 1, 0)
+		spinValue.Position = UDim2.new(0.6, 0, 0, 0)
+		spinValue.Text = string.format("%d", spins):gsub("(%d)(%d%d%d)$", "%1,%2") -- Pseudo comma
+		spinValue.TextColor3 = isTopPlayer and Color3.fromRGB(80, 255, 150) or Color3.new(1, 1, 1)
+		spinValue.Font = Enum.Font.GothamBold
+		spinValue.TextSize = 13
+		spinValue.TextXAlignment = Enum.TextXAlignment.Right
+		spinValue.BackgroundTransparency = 1
+		spinValue.Parent = row
+		
+		if isTopPlayer then
+			createCornerAccents(row, Color3.fromRGB(80, 255, 150))
+			local stroke = Instance.new("UIStroke")
+			stroke.Color = Color3.fromRGB(80, 255, 150)
+			stroke.Thickness = 1
+			stroke.Transparency = 0.6
+			stroke.Parent = row
+			
+			-- Avatar border
+			local astroke = Instance.new("UIStroke")
+			astroke.Color = Color3.fromRGB(80, 255, 150)
+			astroke.Thickness = 2
+			astroke.Parent = avatar
+		else
+			createCornerAccents(row, Color3.new(1, 1, 1))
+			if p == player then
+				local stroke = Instance.new("UIStroke")
+				stroke.Color = Color3.new(1, 1, 1)
+				stroke.Thickness = 1
+				stroke.Transparency = 0.4
+				stroke.Parent = row
+			end
+		end
+		
+		row.Parent = lbScroll
+	end
+	lbScroll.CanvasSize = UDim2.new(0, 0, 0, #players * 49)
+end
+
+Players.PlayerAdded:Connect(function(newPlayer)
+	updateLeaderboard()
+	task.spawn(function()
+		local stats = newPlayer:WaitForChild("leaderstats", 15)
+		if stats then
+			local spins = stats:WaitForChild("Spins", 15)
+			if spins then
+				spins.Changed:Connect(updateLeaderboard)
+			end
+		end
+	end)
+end)
+
+Players.PlayerRemoving:Connect(updateLeaderboard)
+
+-- Listen for existing players
+for _, p in ipairs(Players:GetPlayers()) do
+	task.spawn(function()
+		local stats = p:WaitForChild("leaderstats", 15)
+		if stats then
+			local spins = stats:WaitForChild("Spins", 15)
+			if spins then
+				spins.Changed:Connect(updateLeaderboard)
+			end
+		end
+	end)
+end
+
+-- Toggle Handler
+local lbVisible = true
+local function toggleLeaderboard()
+	lbVisible = not lbVisible
+	lbToggle.Text = lbVisible and ">" or "<"
+	lbFrame:TweenPosition(UDim2.new(1, lbVisible and -250 or 10, 0.02, 0), "Out", "Quad", 0.3, true)
+end
+
+lbToggle.MouseButton1Click:Connect(toggleLeaderboard)
+
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+	if gameProcessed then return end
+	if input.KeyCode == Enum.KeyCode.Tab then
+		toggleLeaderboard()
+	end
+end)
 
 -- Button Animations
 local waveTween = nil
@@ -536,7 +762,6 @@ rollResult.OnClientEvent:Connect(function(item)
 	
 	-- Update Spins (Count every roll received)
 	totalSpins = totalSpins + 1
-	spinLabel.Text = "TOTAL SPINS: " .. totalSpins
 	
 	if not autoUnlocked and totalSpins >= AUTO_UNLOCK_THRESHOLD then
 		autoUnlocked = true
@@ -646,3 +871,4 @@ end)
 
 print("RNG Client initialized.")
 updateInventory() -- Initial sync
+updateLeaderboard()
