@@ -21,6 +21,7 @@ local currentAura = nil
 local lastRollTime = 0
 local ROLL_COOLDOWN = 2.0
 local totalSpins = 0
+local sessionSpins = 0
 local autoUnlocked = false
 local AUTO_UNLOCK_THRESHOLD = 50
 
@@ -182,6 +183,18 @@ local function createUI()
 	
 	resultLabel.Parent = screenGui
 
+	-- Luck Counter
+	local luckLabel = Instance.new("TextLabel")
+	luckLabel.Name = "LuckLabel"
+	luckLabel.Size = UDim2.new(0, 180, 0, 30)
+	luckLabel.Position = UDim2.new(0.5, -195, 0.85, -35)
+	luckLabel.Text = "0/10"
+	luckLabel.TextColor3 = Color3.new(1, 1, 1)
+	luckLabel.Font = Enum.Font.GothamBold
+	luckLabel.TextSize = 18
+	luckLabel.BackgroundTransparency = 1
+	luckLabel.Parent = screenGui
+
 	-- Confirmation UI
 	local confirmFrame = Instance.new("Frame")
 	confirmFrame.Name = "ConfirmFrame"
@@ -334,10 +347,10 @@ local function createUI()
 	lbLayout.Padding = UDim.new(0, 4)
 	lbLayout.Parent = lbScroll
 
-	return rollButton, autoButton, filterBtn, resultLabel, confirmFrame, keepBtn, discardBtn, invToggle, invFrame, scroll, flashFrame, rollContainer, lbScroll, lbToggle, lbFrame, pCountLabel
+	return rollButton, autoButton, filterBtn, resultLabel, confirmFrame, keepBtn, discardBtn, invToggle, invFrame, scroll, flashFrame, rollContainer, lbScroll, lbToggle, lbFrame, pCountLabel, luckLabel
 end
 
-local rollButton, autoButton, filterBtn, resultLabel, confirmFrame, keepBtn, discardBtn, invToggle, invFrame, scroll, flashFrame, _rollContainer, lbScroll, lbToggle, lbFrame, pCountLabel = createUI()
+local rollButton, autoButton, filterBtn, resultLabel, confirmFrame, keepBtn, discardBtn, invToggle, invFrame, scroll, flashFrame, _rollContainer, lbScroll, lbToggle, lbFrame, pCountLabel, luckLabel = createUI()
 
 -- VFX Functions
 local function clearAura()
@@ -413,6 +426,17 @@ local getInventory = remotesFolder:WaitForChild("GetInventory")
 -- Logic Functions
 local rarityOrder = {"Common", "Rare", "Epic", "Legendary", "Mythic"}
 
+local function updateLuckUI()
+	local progress = sessionSpins % 11
+	if progress == 10 then
+		luckLabel.Text = "LUCKY SPIN!"
+		luckLabel.TextColor3 = Color3.fromRGB(255, 215, 0) -- Gold
+	else
+		luckLabel.Text = string.format("%d/10", (progress + 1))
+		luckLabel.TextColor3 = Color3.new(1, 1, 1) -- White
+	end
+end
+
 local function updateInventory()
 	for _, child in ipairs(scroll:GetChildren()) do
 		if child:IsA("Frame") then child:Destroy() end
@@ -421,6 +445,8 @@ local function updateInventory()
 	local data = getInventory:InvokeServer()
 	local inventory = data.Cards
 	totalSpins = data.Spins
+	
+	updateLuckUI()
 	
 	if totalSpins < AUTO_UNLOCK_THRESHOLD then
 		autoButton.Text = string.format("LOCKED (%d/%d)", totalSpins, AUTO_UNLOCK_THRESHOLD)
@@ -762,6 +788,8 @@ rollResult.OnClientEvent:Connect(function(item)
 	
 	-- Update Spins (Count every roll received)
 	totalSpins = totalSpins + 1
+	sessionSpins = sessionSpins + 1
+	updateLuckUI()
 	
 	if not autoUnlocked and totalSpins >= AUTO_UNLOCK_THRESHOLD then
 		autoUnlocked = true

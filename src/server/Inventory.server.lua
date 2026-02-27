@@ -104,6 +104,7 @@ local function incrementSpins(player)
 	if Inventories[userId].Spins % 5 == 0 then
 		task.spawn(savePlayerData, player)
 	end
+	return Inventories[userId].Spins
 end
 
 -- Export for RNGService
