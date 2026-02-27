@@ -624,7 +624,16 @@ local function updateLeaderboard()
 		local uid = tostring(p.UserId)
 		currentUIDs[uid] = true
 		local spins = p:FindFirstChild("leaderstats") and p.leaderstats:FindFirstChild("Spins") and p.leaderstats.Spins.Value or 0
-		local isTopPlayer = (i == 1)
+		local rank = i
+		local rankColor = Color3.new(1, 1, 1) -- Default text color
+		if rank == 1 then
+			rankColor = Color3.fromRGB(255, 215, 0) -- Gold
+		elseif rank == 2 then
+			rankColor = Color3.fromRGB(200, 200, 200) -- Silver
+		elseif rank == 3 then
+			rankColor = Color3.fromRGB(205, 127, 50) -- Bronze
+		end
+		local isTop3 = (rank <= 3)
 		
 		local rowData = playerRows[uid]
 		if not rowData then
@@ -672,7 +681,7 @@ local function updateLeaderboard()
 				Name = nameLabel,
 				Value = spinValue,
 				Avatar = avatar,
-				IsTop = nil
+				LastRank = nil
 			}
 			playerRows[uid] = rowData
 		end
@@ -682,8 +691,8 @@ local function updateLeaderboard()
 		rowData.Frame.LayoutOrder = i
 		
 		-- Update Style if Needed
-		if rowData.IsTop ~= isTopPlayer then
-			rowData.IsTop = isTopPlayer
+		if rowData.LastRank ~= rank then
+			rowData.LastRank = rank
 			
 			-- Cleanup previous decorations
 			for _, child in ipairs(rowData.Frame:GetChildren()) do
@@ -693,24 +702,31 @@ local function updateLeaderboard()
 				if child:IsA("UIStroke") then child:Destroy() end
 			end
 			
-			rowData.Name.TextColor3 = isTopPlayer and Color3.fromRGB(80, 255, 150) or Color3.new(1, 1, 1)
-			rowData.Value.TextColor3 = isTopPlayer and Color3.fromRGB(80, 255, 150) or Color3.new(1, 1, 1)
+			rowData.Name.TextColor3 = rankColor
+			rowData.Value.TextColor3 = rankColor
 			
-			if isTopPlayer then
-				createCornerAccents(rowData.Frame, Color3.fromRGB(80, 255, 150))
+			if isTop3 then
+				createCornerAccents(rowData.Frame, rankColor)
 				local stroke = Instance.new("UIStroke")
-				stroke.Color = Color3.fromRGB(80, 255, 150)
+				stroke.Color = rankColor
 				stroke.Thickness = 1
 				stroke.Transparency = 0.6
 				stroke.Parent = rowData.Frame
 				
 				local astroke = Instance.new("UIStroke")
-				astroke.Color = Color3.fromRGB(80, 255, 150)
+				astroke.Color = rankColor
 				astroke.Thickness = 2
 				astroke.Parent = rowData.Avatar
-			else
+			elseif p == player then
+				-- White highlight for local player if not in top 3
 				createCornerAccents(rowData.Frame, Color3.new(1, 1, 1))
+			else
+				-- Default look for everyone else
+				rowData.Name.TextColor3 = Color3.new(1, 1, 1)
+				rowData.Value.TextColor3 = Color3.new(1, 1, 1)
+				
 				if p == player then
+					-- White highlight for local player if not in top 3
 					local stroke = Instance.new("UIStroke")
 					stroke.Color = Color3.new(1, 1, 1)
 					stroke.Thickness = 1
