@@ -237,8 +237,8 @@ local function createUI()
 	-- Sidebar Container
 	local sidebar = Instance.new("Frame")
 	sidebar.Name = "Sidebar"
-	sidebar.Size = UDim2.new(0, 60, 0, 240)
-	sidebar.Position = UDim2.new(0.02, 0, 0.5, -120)
+	sidebar.Size = UDim2.new(0, 50, 0, 310)
+	sidebar.Position = UDim2.new(0.02, 0, 0.5, -155)
 	sidebar.BackgroundTransparency = 1
 	sidebar.Parent = screenGui
 
@@ -272,7 +272,7 @@ local function createUI()
 		-- Base Container (Handles Style & Layout)
 		local base = Instance.new("Frame")
 		base.Name = name .. "Base"
-		base.Size = UDim2.new(0, 50, 0, 50)
+		base.Size = UDim2.new(0, 42, 0, 42)
 		base.BackgroundColor3 = color1
 		base.LayoutOrder = layoutOrder
 		
@@ -323,37 +323,243 @@ local function createUI()
 	end
 
 	-- VERIFIED LUCIDE ICONS (GUARANTEED VISIBILITY)
-	-- Order: Inventory (1), Missions (2), Shop (3), Settings (4)
-	local invToggle = setupSidebarButton("Bag", "rbxassetid://7734056747", 1, Color3.fromRGB(220, 180, 40), Color3.fromRGB(160, 120, 20))    -- shopping-bag
+	-- Order: Storage (1), Missions (2), Shop (3), Index (4), Settings (5)
+	local invToggle = setupSidebarButton("Storage", "rbxassetid://7734056747", 1, Color3.fromRGB(220, 180, 40), Color3.fromRGB(160, 120, 20))    -- shopping-bag
 	local missionsBtn = setupSidebarButton("Missions", "rbxassetid://7733920117", 2, Color3.fromRGB(80, 160, 220), Color3.fromRGB(40, 80, 120)) -- clipboard-list
 	local shopBtn = setupSidebarButton("Shop", "rbxassetid://7734056813", 3, Color3.fromRGB(220, 80, 160), Color3.fromRGB(120, 40, 80))        -- shopping-cart
-	local settingsBtn = setupSidebarButton("Settings", "rbxassetid://7734053495", 4, Color3.fromRGB(140, 140, 150), Color3.fromRGB(80, 80, 90))-- settings
+	local indexBtn = setupSidebarButton("Index", "rbxassetid://7733914390", 4, Color3.fromRGB(80, 220, 160), Color3.fromRGB(40, 120, 80))     -- book
+	local settingsBtn = setupSidebarButton("Settings", "rbxassetid://7734053495", 5, Color3.fromRGB(140, 140, 150), Color3.fromRGB(80, 80, 90))-- settings
 
-	-- Inventory Frame
+	-- Inventory Frame (Storage Redesign)
 	local invFrame = Instance.new("Frame")
 	invFrame.Name = "InventoryFrame"
-	invFrame.Size = UDim2.new(0, 300, 0, 450)
-	invFrame.Position = UDim2.new(-0.4, 0, 0.5, -225)
-	invFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+	invFrame.Size = UDim2.new(0, 700, 0, 450)
+	invFrame.Position = UDim2.new(0.5, -350, 0.5, -225)
+	invFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+	invFrame.Visible = false
+	invFrame.ZIndex = 50
 	invFrame.Parent = screenGui
-	applyModernStyle(invFrame, Color3.fromRGB(40, 40, 45), Color3.fromRGB(25, 25, 30))
+	applyModernStyle(invFrame, Color3.fromRGB(35, 35, 40), Color3.fromRGB(20, 20, 25))
 	
+	-- Top Bar
+	local invTopBar = Instance.new("Frame")
+	invTopBar.Size = UDim2.new(1, 0, 0, 40)
+	invTopBar.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+	local topCorner = Instance.new("UICorner")
+	topCorner.CornerRadius = UDim.new(0, 10)
+	topCorner.Parent = invTopBar
+	local topFiller = Instance.new("Frame")
+	topFiller.Size = UDim2.new(1, 0, 0, 10)
+	topFiller.Position = UDim2.new(0, 0, 1, -10)
+	topFiller.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+	topFiller.BorderSizePixel = 0
+	topFiller.Parent = invTopBar
+	invTopBar.Parent = invFrame
+
 	local invTitle = Instance.new("TextLabel")
-	invTitle.Size = UDim2.new(1, 0, 0, 40)
-	invTitle.Text = "MY COLLECTION"
+	invTitle.Size = UDim2.new(0, 200, 1, 0)
+	invTitle.Position = UDim2.new(0, 20, 0, 0)
+	invTitle.Text = "CARDS STORAGE"
 	invTitle.TextColor3 = Color3.new(1, 1, 1)
 	invTitle.Font = Enum.Font.GothamBold
-	invTitle.TextSize = 18
+	invTitle.TextSize = 16
+	invTitle.TextXAlignment = Enum.TextXAlignment.Left
 	invTitle.BackgroundTransparency = 1
-	invTitle.Parent = invFrame
+	invTitle.Parent = invTopBar
 
+	local closeBtn = Instance.new("TextButton")
+	closeBtn.Size = UDim2.new(0, 40, 0, 40)
+	closeBtn.Position = UDim2.new(1, -40, 0, 0)
+	closeBtn.Text = "X"
+	closeBtn.TextColor3 = Color3.new(1, 1, 1)
+	closeBtn.Font = Enum.Font.GothamBold
+	closeBtn.TextSize = 20
+	closeBtn.BackgroundTransparency = 1
+	closeBtn.Parent = invTopBar
+	closeBtn.MouseButton1Click:Connect(function()
+		invFrame.Visible = false
+	end)
+
+	-- Tabs
+	local tabsFrame = Instance.new("Frame")
+	tabsFrame.Size = UDim2.new(1, -240, 0, 40)
+	tabsFrame.Position = UDim2.new(0, 240, 0, 45)
+	tabsFrame.BackgroundTransparency = 1
+	tabsFrame.Parent = invFrame
+
+	local tabCartas = Instance.new("TextButton")
+	tabCartas.Size = UDim2.new(0.5, -5, 1, 0)
+	tabCartas.Text = "CARTAS"
+	tabCartas.BackgroundColor3 = Color3.fromRGB(60, 60, 75) -- Consistent medium-bright
+	tabCartas.TextColor3 = Color3.new(1, 1, 1)
+	tabCartas.Font = Enum.Font.GothamBold
+	tabCartas.TextSize = 15
+	tabCartas.Parent = tabsFrame
+	applyModernStyle(tabCartas, Color3.fromRGB(60, 60, 75), Color3.fromRGB(45, 45, 60))
+	if tabCartas:FindFirstChild("UIStroke") and tabCartas.UIStroke.ApplyStrokeMode == Enum.ApplyStrokeMode.Contextual then
+		tabCartas.UIStroke:Destroy() -- Remove text stroke for maximum clarity
+	end
+
+	local tabItems = Instance.new("TextButton")
+	tabItems.Size = UDim2.new(0.5, -5, 1, 0)
+	tabItems.Position = UDim2.new(0.5, 5, 0, 0)
+	tabItems.Text = "ITEMS"
+	tabItems.BackgroundColor3 = Color3.fromRGB(60, 60, 75) -- Same as Cartas
+	tabItems.TextColor3 = Color3.new(1, 1, 1) 
+	tabItems.Font = Enum.Font.GothamBold
+	tabItems.TextSize = 15
+	tabItems.Parent = tabsFrame
+	applyModernStyle(tabItems, Color3.fromRGB(60, 60, 75), Color3.fromRGB(45, 45, 60))
+	if tabItems:FindFirstChild("UIStroke") and tabItems.UIStroke.ApplyStrokeMode == Enum.ApplyStrokeMode.Contextual then
+		tabItems.UIStroke:Destroy() -- Remove text stroke
+	end
+
+	-- Search Bar
+	local searchBox = Instance.new("TextBox")
+	searchBox.Name = "SearchBox"
+	searchBox.Size = UDim2.new(1, -240, 0, 30)
+	searchBox.Position = UDim2.new(0, 240, 0, 95)
+	searchBox.Text = ""
+	searchBox.PlaceholderText = "Search..."
+	searchBox.PlaceholderColor3 = Color3.fromRGB(220, 220, 220) -- Clearer placeholder
+	searchBox.BackgroundColor3 = Color3.fromRGB(60, 60, 75) -- Same as buttons
+	searchBox.TextColor3 = Color3.new(1, 1, 1)
+	searchBox.Font = Enum.Font.Gotham
+	searchBox.TextSize = 14
+	searchBox.ClearTextOnFocus = false
+	searchBox.Parent = invFrame
+	applyModernStyle(searchBox, Color3.fromRGB(60, 60, 75), Color3.fromRGB(45, 45, 60))
+	if searchBox:FindFirstChild("UIStroke") and searchBox.UIStroke.ApplyStrokeMode == Enum.ApplyStrokeMode.Contextual then
+		searchBox.UIStroke:Destroy() -- Remove text stroke
+	end
+
+	-- Grid Area
 	local scroll = Instance.new("ScrollingFrame")
-	scroll.Size = UDim2.new(1, -20, 1, -60)
-	scroll.Position = UDim2.new(0, 10, 0, 50)
+	scroll.Name = "GridScroll"
+	scroll.Size = UDim2.new(1, -250, 1, -180)
+	scroll.Position = UDim2.new(0, 240, 0, 135)
 	scroll.BackgroundTransparency = 1
 	scroll.CanvasSize = UDim2.new(0, 0, 0, 0)
 	scroll.ScrollBarThickness = 6
 	scroll.Parent = invFrame
+
+	local gridLayout = Instance.new("UIGridLayout")
+	gridLayout.CellSize = UDim2.new(0, 100, 0, 100)
+	gridLayout.CellPadding = UDim2.new(0, 8, 0, 8)
+	gridLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	gridLayout.Parent = scroll
+
+	-- Bottom Bar
+	local invBottomBar = Instance.new("Frame")
+	invBottomBar.Size = UDim2.new(1, -250, 0, 40)
+	invBottomBar.Position = UDim2.new(0, 240, 1, -45)
+	invBottomBar.BackgroundTransparency = 1
+	invBottomBar.Parent = invFrame
+
+	local countLabel = Instance.new("TextLabel")
+	countLabel.Name = "CountLabel"
+	countLabel.Size = UDim2.new(0.5, 0, 1, 0)
+	countLabel.Text = "0 CARTAS"
+	countLabel.TextColor3 = Color3.new(1, 1, 1)
+	countLabel.Font = Enum.Font.GothamBold
+	countLabel.TextSize = 16
+	countLabel.TextXAlignment = Enum.TextXAlignment.Left
+	countLabel.BackgroundTransparency = 1
+	countLabel.Parent = invBottomBar
+
+	local deleteModeBtn = Instance.new("TextButton")
+	deleteModeBtn.Size = UDim2.new(0, 150, 0, 30)
+	deleteModeBtn.Position = UDim2.new(1, -150, 0.5, -15)
+	deleteModeBtn.Text = "DELETE MODE"
+	deleteModeBtn.BackgroundColor3 = Color3.fromRGB(180, 40, 40)
+	deleteModeBtn.TextColor3 = Color3.new(1, 1, 1)
+	deleteModeBtn.Font = Enum.Font.GothamBold
+	deleteModeBtn.TextSize = 12
+	deleteModeBtn.Parent = invBottomBar
+	applyModernStyle(deleteModeBtn, Color3.fromRGB(180, 40, 40), Color3.fromRGB(120, 20, 20))
+
+	-- Details Panel (Left)
+	local detailsFrame = Instance.new("Frame")
+	detailsFrame.Name = "DetailsFrame"
+	detailsFrame.Size = UDim2.new(0, 210, 1, -60)
+	detailsFrame.Position = UDim2.new(0, 15, 0, 45)
+	detailsFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+	detailsFrame.Parent = invFrame
+	applyModernStyle(detailsFrame, Color3.fromRGB(25, 25, 30), Color3.fromRGB(15, 15, 20))
+
+	local dName = Instance.new("TextLabel")
+	dName.Name = "ItemName"
+	dName.Size = UDim2.new(1, -20, 0, 30)
+	dName.Position = UDim2.new(0, 10, 0, 15)
+	dName.Text = "SELECT A CARD"
+	dName.TextColor3 = Color3.new(1, 1, 1)
+	dName.Font = Enum.Font.GothamBold
+	dName.TextSize = 16
+	dName.TextWrapped = true
+	dName.BackgroundTransparency = 1
+	dName.Parent = detailsFrame
+
+	local dChance = Instance.new("TextLabel")
+	dChance.Name = "ItemChance"
+	dChance.Size = UDim2.new(1, -20, 0, 20)
+	dChance.Position = UDim2.new(0, 10, 0, 50)
+	dChance.Text = ""
+	dChance.TextColor3 = Color3.new(1, 1, 1) -- Brighter
+	dChance.Font = Enum.Font.GothamBold
+	dChance.TextSize = 14 -- Increased
+	dChance.BackgroundTransparency = 1
+	dChance.Parent = detailsFrame
+
+	local dQuote = Instance.new("TextLabel")
+	dQuote.Name = "ItemQuote"
+	dQuote.Size = UDim2.new(1, -20, 0, 80)
+	dQuote.Position = UDim2.new(0, 10, 0, 90)
+	dQuote.Text = ""
+	dQuote.TextColor3 = Color3.fromRGB(220, 220, 220) -- Brighter
+	dQuote.Font = Enum.Font.GothamMedium
+	dQuote.TextSize = 13 -- Increased
+	dQuote.TextWrapped = true
+	dQuote.BackgroundTransparency = 1
+	dQuote.Parent = detailsFrame
+
+	local equipBtn = Instance.new("TextButton")
+	equipBtn.Name = "EquipBtn"
+	equipBtn.Size = UDim2.new(1, -30, 0, 35)
+	equipBtn.Position = UDim2.new(0, 15, 1, -145)
+	equipBtn.Text = "EQUIP"
+	equipBtn.BackgroundColor3 = Color3.fromRGB(40, 160, 80)
+	equipBtn.TextColor3 = Color3.new(1, 1, 1)
+	equipBtn.Font = Enum.Font.GothamBold
+	equipBtn.TextSize = 14
+	equipBtn.Visible = false
+	equipBtn.Parent = detailsFrame
+	applyModernStyle(equipBtn, Color3.fromRGB(40, 160, 80), Color3.fromRGB(20, 100, 40))
+
+	local deleteBtn = Instance.new("TextButton")
+	deleteBtn.Name = "DeleteBtn"
+	deleteBtn.Size = UDim2.new(1, -30, 0, 35)
+	deleteBtn.Position = UDim2.new(0, 15, 1, -100)
+	deleteBtn.Text = "DELETE"
+	deleteBtn.BackgroundColor3 = Color3.fromRGB(180, 40, 40)
+	deleteBtn.TextColor3 = Color3.new(1, 1, 1)
+	deleteBtn.Font = Enum.Font.GothamBold
+	deleteBtn.TextSize = 14
+	deleteBtn.Visible = false
+	deleteBtn.Parent = detailsFrame
+	applyModernStyle(deleteBtn, Color3.fromRGB(180, 40, 40), Color3.fromRGB(120, 20, 20))
+
+	local lockBtn = Instance.new("TextButton")
+	lockBtn.Name = "LockBtn"
+	lockBtn.Size = UDim2.new(1, -30, 0, 35)
+	lockBtn.Position = UDim2.new(0, 15, 1, -55)
+	lockBtn.Text = "LOCK"
+	lockBtn.BackgroundColor3 = Color3.fromRGB(40, 80, 180)
+	lockBtn.TextColor3 = Color3.new(1, 1, 1)
+	lockBtn.Font = Enum.Font.GothamBold
+	lockBtn.TextSize = 14
+	lockBtn.Visible = false
+	lockBtn.Parent = detailsFrame
+	applyModernStyle(lockBtn, Color3.fromRGB(40, 80, 180), Color3.fromRGB(20, 40, 120))
 
 	-- Leaderboard Frame
 	local lbFrame = Instance.new("Frame")
@@ -427,10 +633,10 @@ local function createUI()
 	lbLayout.Padding = UDim.new(0, 4)
 	lbLayout.Parent = lbScroll
 
-	return rollButton, autoButton, filterBtn, resultLabel, confirmFrame, keepBtn, discardBtn, invToggle, invFrame, scroll, flashFrame, rollContainer, lbScroll, lbToggle, lbFrame, pCountLabel, luckLabel, missionsBtn, shopBtn, settingsBtn
+	return rollButton, autoButton, filterBtn, resultLabel, confirmFrame, keepBtn, discardBtn, invToggle, invFrame, scroll, flashFrame, rollContainer, lbScroll, lbToggle, lbFrame, pCountLabel, luckLabel, missionsBtn, shopBtn, indexBtn, settingsBtn
 end
 
-local rollButton, autoButton, filterBtn, resultLabel, confirmFrame, keepBtn, discardBtn, invToggle, invFrame, scroll, flashFrame, _rollContainer, lbScroll, lbToggle, lbFrame, pCountLabel, luckLabel, missionsBtn, shopBtn, settingsBtn = createUI()
+local rollButton, autoButton, filterBtn, resultLabel, confirmFrame, keepBtn, discardBtn, invToggle, invFrame, scroll, flashFrame, _rollContainer, lbScroll, lbToggle, lbFrame, pCountLabel, luckLabel, missionsBtn, shopBtn, _indexBtn, settingsBtn = createUI()
 
 -- VFX Functions
 local function clearAura()
@@ -519,7 +725,7 @@ end
 
 local function updateInventory()
 	for _, child in ipairs(scroll:GetChildren()) do
-		if child:IsA("Frame") then child:Destroy() end
+		if child:IsA("TextButton") then child:Destroy() end
 	end
 	
 	local data = getInventory:InvokeServer()
@@ -540,34 +746,93 @@ local function updateInventory()
 		end
 	end
 
-	for _, item in ipairs(inventory) do
-		local frame = Instance.new("Frame")
-		frame.Size = UDim2.new(1, 0, 0, 45)
-		frame.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-		local fCorner = Instance.new("UICorner")
-		fCorner.Parent = frame
-		
-		local label = Instance.new("TextLabel")
-		label.Size = UDim2.new(1, -10, 1, 0)
-		label.Position = UDim2.new(0, 10, 0, 0)
-		label.Text = string.format("[%s] %s", item.Rarity:upper(), item.Name)
-		label.BackgroundTransparency = 1
-		label.TextColor3 = Cards.Rarities[item.Rarity].Color
-		label.Font = Enum.Font.GothamBold
-		label.TextSize = 14
-		label.TextXAlignment = Enum.TextXAlignment.Left
-		label.Parent = frame
-		
-		local stripe = Instance.new("Frame")
-		stripe.Size = UDim2.new(0, 4, 0.8, 0)
-		stripe.Position = UDim2.new(0, 0, 0.1, 0)
-		stripe.BackgroundColor3 = Cards.Rarities[item.Rarity].Color
-		stripe.BorderSizePixel = 0
-		stripe.Parent = frame
-		
-		frame.Parent = scroll
+	local countLabel = invFrame:FindFirstChild("CountLabel", true)
+	if countLabel then
+		countLabel.Text = string.format("%d CARTAS", #inventory)
 	end
-	scroll.CanvasSize = UDim2.new(0, 0, 0, #inventory * 53)
+	
+	local detailsFrame = invFrame:FindFirstChild("DetailsFrame")
+
+	for _, item in ipairs(inventory) do
+		local cell = Instance.new("TextButton")
+		cell.Size = UDim2.new(0, 100, 0, 100)
+		cell.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
+		cell.Text = ""
+		local cCorner = Instance.new("UICorner")
+		cCorner.CornerRadius = UDim.new(0, 6)
+		cCorner.Parent = cell
+		
+		local rarityData = Cards.Rarities[item.Rarity]
+		local rColor = rarityData and rarityData.Color or Color3.new(1, 1, 1)
+		
+		local stroke = Instance.new("UIStroke")
+		stroke.Color = rColor
+		stroke.Thickness = 2
+		stroke.Parent = cell
+		
+		local nameLbl = Instance.new("TextLabel")
+		nameLbl.Size = UDim2.new(1, -10, 0.4, 0)
+		nameLbl.Position = UDim2.new(0, 5, 0.1, 0)
+		nameLbl.Text = item.Name:upper()
+		nameLbl.TextColor3 = rColor
+		nameLbl.Font = Enum.Font.GothamBold
+		nameLbl.TextSize = 13 -- Slightly larger
+		nameLbl.TextWrapped = true
+		nameLbl.BackgroundTransparency = 1
+		nameLbl.Parent = cell
+		
+		local nStroke = Instance.new("UIStroke")
+		nStroke.Thickness = 1
+		nStroke.Color = Color3.new(0, 0, 0)
+		nStroke.Transparency = 0.4
+		nStroke.Parent = nameLbl
+
+		local chanceLbl = Instance.new("TextLabel")
+		chanceLbl.Size = UDim2.new(1, -10, 0.3, 0)
+		chanceLbl.Position = UDim2.new(0, 5, 0.55, 0) -- Adjusted position
+		chanceLbl.Text = rarityData and string.format("1 IN\n%d", rarityData.Chance) or ""
+		chanceLbl.TextColor3 = Color3.new(1, 1, 1)
+		chanceLbl.Font = Enum.Font.GothamBold
+		chanceLbl.TextSize = 11 -- Increased
+		chanceLbl.BackgroundTransparency = 1
+		chanceLbl.Parent = cell
+
+		local cStroke = Instance.new("UIStroke")
+		cStroke.Thickness = 1
+		cStroke.Color = Color3.new(0, 0, 0)
+		cStroke.Transparency = 0.4
+		cStroke.Parent = chanceLbl
+		
+		-- Click Interaction
+		cell.MouseButton1Click:Connect(function()
+			if detailsFrame then
+				local dName = detailsFrame:FindFirstChild("ItemName")
+				local dChance = detailsFrame:FindFirstChild("ItemChance")
+				local equipBtn = detailsFrame:FindFirstChild("EquipBtn")
+				local deleteBtn = detailsFrame:FindFirstChild("DeleteBtn")
+				local lockBtn = detailsFrame:FindFirstChild("LockBtn")
+				
+				if dName then dName.Text = item.Name:upper(); dName.TextColor3 = rColor end
+				if dChance then dChance.Text = chanceLbl.Text end
+				if equipBtn then equipBtn.Visible = true end
+				if deleteBtn then deleteBtn.Visible = true end
+				if lockBtn then lockBtn.Visible = true end
+			end
+		end)
+		
+		cell.Parent = scroll
+	end
+	
+	-- UIGridLayout calculates AbsoluteContentSize dynamically
+	local gridLayout = scroll:FindFirstChild("UIGridLayout")
+	if gridLayout then
+		-- Delay briefly to ensure GridLayout updates
+		task.delay(0.1, function()
+			scroll.CanvasSize = UDim2.new(0, 0, 0, gridLayout.AbsoluteContentSize.Y)
+		end)
+	else
+		scroll.CanvasSize = UDim2.new(0, 0, 0, math.ceil(#inventory / 4) * 116)
+	end
 end
 
 -- Leaderboard logic
@@ -855,9 +1120,8 @@ end
 
 -- UI Handlers
 invToggle.MouseButton1Click:Connect(function()
-	local isOpen = invFrame.Position.X.Scale > 0
-	invFrame:TweenPosition(UDim2.new(isOpen and -0.4 or 0.08, 0, 0.5, -225), "Out", "Quad", 0.4, true)
-	if not isOpen then updateInventory() end
+	invFrame.Visible = not invFrame.Visible
+	if invFrame.Visible then updateInventory() end
 end)
 
 missionsBtn.MouseButton1Click:Connect(function()
