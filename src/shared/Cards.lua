@@ -8,21 +8,21 @@ local Cards = {
 	},
 
 	Items = {
-		{ Name = "Goku (Kid)", Rarity = "Common", Description = "A young martial artist with a tail." },
-		{ Name = "Luffy", Rarity = "Common", Description = "Wants to be the Pirate King." },
-		{ Name = "Naruto", Rarity = "Common", Description = "The host of the Nine-Tails." },
-		
-		{ Name = "Vegeta", Rarity = "Rare", Description = "Prince of all Saiyans." },
-		{ Name = "Zoro", Rarity = "Rare", Description = "The three-sword style master." },
-		
-		{ Name = "Tanjiro", Rarity = "Epic", Description = "A demon slayer with a heart of gold." },
-		{ Name = "Killua", Rarity = "Epic", Description = "The lightning-fast assassin." },
-		
-		{ Name = "Saitama", Rarity = "Legendary", Description = "One punch is all he needs." },
-		{ Name = "Gojo", Rarity = "Legendary", Description = "The strongest sorcerer." },
-		
-		{ Name = "Gear 5 Luffy", Rarity = "Mythic", Description = "The warrior of liberation." },
-		{ Name = "Madara Uchiha", Rarity = "Mythic", Description = "The legendary leader of the Uchiha clan." },
+		{ Name = "Midoriya",    Rarity = "Common",    Description = "The successor of One For All.",           Image = "rbxassetid://144133933720962" },
+		{ Name = "Luffy",         Rarity = "Common",    Description = "Wants to be the Pirate King.",                  Image = "rbxassetid://0" },
+		{ Name = "Naruto",        Rarity = "Common",    Description = "The host of the Nine-Tails.",                   Image = "rbxassetid://0" },
+
+		{ Name = "Vegeta",        Rarity = "Rare",      Description = "Prince of all Saiyans.",                        Image = "rbxassetid://0" },
+		{ Name = "Zoro",          Rarity = "Rare",      Description = "The three-sword style master.",                 Image = "rbxassetid://0" },
+
+		{ Name = "Tanjiro",       Rarity = "Epic",      Description = "A demon slayer with a heart of gold.",          Image = "rbxassetid://0" },
+		{ Name = "Killua",        Rarity = "Epic",      Description = "The lightning-fast assassin.",                  Image = "rbxassetid://0" },
+
+		{ Name = "Saitama",       Rarity = "Legendary", Description = "One punch is all he needs.",                    Image = "rbxassetid://0" },
+		{ Name = "Gojo",          Rarity = "Legendary", Description = "The strongest sorcerer.",                       Image = "rbxassetid://0" },
+
+		{ Name = "Gear 5 Luffy",  Rarity = "Mythic",    Description = "The warrior of liberation.",                    Image = "rbxassetid://0" },
+		{ Name = "Madara Uchiha", Rarity = "Mythic",    Description = "The legendary leader of the Uchiha clan.",      Image = "rbxassetid://0" },
 	}
 }
 

@@ -161,27 +161,17 @@ local function createUI()
 	-- Result Display
 	local resultLabel = Instance.new("TextLabel")
 	resultLabel.Name = "ResultLabel"
-	resultLabel.Size = UDim2.new(0, 400, 0, 100)
-	resultLabel.Position = UDim2.new(0.5, -200, 0.3, -50)
+	resultLabel.Size = UDim2.new(0, 360, 0, 80)
+	resultLabel.Position = UDim2.new(0.5, -180, 0.5, -250)
+	resultLabel.AnchorPoint = Vector2.new(0, 0)
 	resultLabel.Text = "Roll for a card!"
 	resultLabel.BackgroundTransparency = 1
 	resultLabel.TextColor3 = Color3.new(1, 1, 1)
 	resultLabel.Font = Enum.Font.GothamBold
-	resultLabel.TextSize = 38
-	
-	local shadowLabel = Instance.new("TextLabel")
-	shadowLabel.Name = "ShadowLabel"
-	shadowLabel.Size = UDim2.new(1, 0, 1, 0)
-	shadowLabel.Position = UDim2.new(0, 3, 0, 3) -- Slightly deeper shadow
-	shadowLabel.BackgroundTransparency = 1
-	shadowLabel.TextColor3 = Color3.new(0, 0, 0)
-	shadowLabel.TextTransparency = 0.4
-	shadowLabel.Font = Enum.Font.GothamBold
-	shadowLabel.TextSize = 38
-	shadowLabel.Text = resultLabel.Text
-	shadowLabel.ZIndex = 0
-	shadowLabel.Parent = resultLabel
-	
+	resultLabel.TextSize = 24
+	resultLabel.TextWrapped = true
+	resultLabel.TextXAlignment = Enum.TextXAlignment.Center
+
 	resultLabel.Parent = screenGui
 
 	-- Luck Counter
@@ -196,41 +186,61 @@ local function createUI()
 	luckLabel.BackgroundTransparency = 1
 	luckLabel.Parent = screenGui
 
+	-- Card Image (shown after a roll, above the KEEP/DISCARD buttons)
+	local cardImage = Instance.new("ImageLabel")
+	cardImage.Name = "CardImage"
+	cardImage.Size = UDim2.new(0, 130, 0, 165)
+	cardImage.Position = UDim2.new(0.5, -65, 0.5, -155)
+	cardImage.AnchorPoint = Vector2.new(0, 0)
+	cardImage.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+	cardImage.BackgroundTransparency = 0.2
+	cardImage.Image = ""
+	cardImage.ScaleType = Enum.ScaleType.Fit
+	cardImage.Visible = false
+	cardImage.ZIndex = 5
+	local ciCorner = Instance.new("UICorner")
+	ciCorner.CornerRadius = UDim.new(0, 10)
+	ciCorner.Parent = cardImage
+	local ciStroke = Instance.new("UIStroke")
+	ciStroke.Thickness = 2.5
+	ciStroke.Color = Color3.fromRGB(160, 160, 180)
+	ciStroke.Transparency = 0.3
+	ciStroke.Parent = cardImage
+	cardImage.Parent = screenGui
+
 	-- Confirmation UI
 	local confirmFrame = Instance.new("Frame")
 	confirmFrame.Name = "ConfirmFrame"
-	confirmFrame.Size = UDim2.new(0, 320, 0, 120)
-	confirmFrame.Position = UDim2.new(0.5, -160, 0.45, 0)
-	confirmFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+	confirmFrame.Size = UDim2.new(0, 300, 0, 50)
+	confirmFrame.Position = UDim2.new(0.5, -150, 0.5, 28)
+	confirmFrame.AnchorPoint = Vector2.new(0, 0)
+	confirmFrame.BackgroundTransparency = 1
 	confirmFrame.BorderSizePixel = 0
+	confirmFrame.ZIndex = 10
 	confirmFrame.Visible = false
-	local cfCorner = Instance.new("UICorner")
-	cfCorner.Parent = confirmFrame
-	local cfStroke = Instance.new("UIStroke")
-	cfStroke.Thickness = 3
-	cfStroke.Color = Color3.fromRGB(120, 120, 120)
-	cfStroke.Parent = confirmFrame
 	confirmFrame.Parent = screenGui
 
 	local keepBtn = Instance.new("TextButton")
 	keepBtn.Name = "KeepButton"
 	keepBtn.Size = UDim2.new(0, 130, 0, 45)
-	keepBtn.Position = UDim2.new(0.05, 0, 0.35, 0)
+	keepBtn.Position = UDim2.new(0, 0, 0, 0)
 	keepBtn.Text = "KEEP"
-	keepBtn.BackgroundColor3 = Color3.fromRGB(40, 200, 40) -- Vibrant Neon Green
+	keepBtn.BackgroundColor3 = Color3.fromRGB(40, 200, 40)
 	keepBtn.TextColor3 = Color3.new(1, 1, 1)
 	keepBtn.Font = Enum.Font.GothamBold
+	keepBtn.ZIndex = 10
 	keepBtn.Parent = confirmFrame
 	applyModernStyle(keepBtn, Color3.fromRGB(40, 200, 40), Color3.fromRGB(20, 120, 20))
 
 	local discardBtn = Instance.new("TextButton")
 	discardBtn.Name = "DiscardButton"
 	discardBtn.Size = UDim2.new(0, 130, 0, 45)
-	discardBtn.Position = UDim2.new(0.55, 0, 0.35, 0)
+	discardBtn.Position = UDim2.new(0, 170, 0, 0)
 	discardBtn.Text = "DISCARD"
-	discardBtn.BackgroundColor3 = Color3.fromRGB(220, 40, 40) -- Vibrant Red
+	discardBtn.BackgroundColor3 = Color3.fromRGB(220, 40, 40)
 	discardBtn.TextColor3 = Color3.new(1, 1, 1)
 	discardBtn.Font = Enum.Font.GothamBold
+	discardBtn.ZIndex = 10
 	discardBtn.Parent = confirmFrame
 	applyModernStyle(discardBtn, Color3.fromRGB(220, 40, 40), Color3.fromRGB(140, 20, 20))
 
@@ -633,10 +643,10 @@ local function createUI()
 	lbLayout.Padding = UDim.new(0, 4)
 	lbLayout.Parent = lbScroll
 
-	return rollButton, autoButton, filterBtn, resultLabel, confirmFrame, keepBtn, discardBtn, invToggle, invFrame, scroll, flashFrame, rollContainer, lbScroll, lbToggle, lbFrame, pCountLabel, luckLabel, missionsBtn, shopBtn, indexBtn, settingsBtn
+	return rollButton, autoButton, filterBtn, resultLabel, confirmFrame, keepBtn, discardBtn, invToggle, invFrame, scroll, flashFrame, rollContainer, lbScroll, lbToggle, lbFrame, pCountLabel, luckLabel, missionsBtn, shopBtn, indexBtn, settingsBtn, cardImage
 end
 
-local rollButton, autoButton, filterBtn, resultLabel, confirmFrame, keepBtn, discardBtn, invToggle, invFrame, scroll, flashFrame, _rollContainer, lbScroll, lbToggle, lbFrame, pCountLabel, luckLabel, missionsBtn, shopBtn, _indexBtn, settingsBtn = createUI()
+local rollButton, autoButton, filterBtn, resultLabel, confirmFrame, keepBtn, discardBtn, invToggle, invFrame, scroll, flashFrame, _rollContainer, lbScroll, lbToggle, lbFrame, pCountLabel, luckLabel, missionsBtn, shopBtn, _indexBtn, settingsBtn, cardImage = createUI()
 
 -- VFX Functions
 local function clearAura()
@@ -769,14 +779,27 @@ local function updateInventory()
 		stroke.Color = rColor
 		stroke.Thickness = 2
 		stroke.Parent = cell
+
+		-- Card image (top 55% of the cell)
+		local cellImage = Instance.new("ImageLabel")
+		cellImage.Size = UDim2.new(1, -6, 0.55, 0)
+		cellImage.Position = UDim2.new(0, 3, 0, 3)
+		cellImage.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+		cellImage.BackgroundTransparency = 0.4
+		cellImage.Image = item.Image or ""
+		cellImage.ScaleType = Enum.ScaleType.Fit
+		local ciCorner = Instance.new("UICorner")
+		ciCorner.CornerRadius = UDim.new(0, 4)
+		ciCorner.Parent = cellImage
+		cellImage.Parent = cell
 		
 		local nameLbl = Instance.new("TextLabel")
-		nameLbl.Size = UDim2.new(1, -10, 0.4, 0)
-		nameLbl.Position = UDim2.new(0, 5, 0.1, 0)
+		nameLbl.Size = UDim2.new(1, -6, 0.28, 0)
+		nameLbl.Position = UDim2.new(0, 3, 0.57, 0)
 		nameLbl.Text = item.Name:upper()
 		nameLbl.TextColor3 = rColor
 		nameLbl.Font = Enum.Font.GothamBold
-		nameLbl.TextSize = 13 -- Slightly larger
+		nameLbl.TextSize = 11
 		nameLbl.TextWrapped = true
 		nameLbl.BackgroundTransparency = 1
 		nameLbl.Parent = cell
@@ -788,12 +811,12 @@ local function updateInventory()
 		nStroke.Parent = nameLbl
 
 		local chanceLbl = Instance.new("TextLabel")
-		chanceLbl.Size = UDim2.new(1, -10, 0.3, 0)
-		chanceLbl.Position = UDim2.new(0, 5, 0.55, 0) -- Adjusted position
-		chanceLbl.Text = rarityData and string.format("1 IN\n%d", rarityData.Chance) or ""
-		chanceLbl.TextColor3 = Color3.new(1, 1, 1)
+		chanceLbl.Size = UDim2.new(1, -6, 0.18, 0)
+		chanceLbl.Position = UDim2.new(0, 3, 0.82, 0)
+		chanceLbl.Text = rarityData and string.format("%g%%", rarityData.Chance) or ""
+		chanceLbl.TextColor3 = Color3.new(0.8, 0.8, 0.8)
 		chanceLbl.Font = Enum.Font.GothamBold
-		chanceLbl.TextSize = 11 -- Increased
+		chanceLbl.TextSize = 10
 		chanceLbl.BackgroundTransparency = 1
 		chanceLbl.Parent = cell
 
@@ -1248,6 +1271,13 @@ rollResult.OnClientEvent:Connect(function(item)
 	if resultLabel:FindFirstChild("ShadowLabel") then
 		resultLabel.ShadowLabel.Text = resultLabel.Text
 	end
+
+	-- Show card image (rarity-colored border)
+	cardImage.Image = item.Image or ""
+	local ciStroke = cardImage:FindFirstChildOfClass("UIStroke")
+	if ciStroke then ciStroke.Color = rarityData.Color end
+	cardImage.Visible = true
+
 	confirmFrame.Visible = true
 	rollButton.Text = "DECIDE..."
 	
@@ -1262,6 +1292,7 @@ keepBtn.MouseButton1Click:Connect(function()
 		claimCard:FireServer(currentCard)
 		currentCard = nil
 		confirmFrame.Visible = false
+		cardImage.Visible = false
 		setRollButtonActive(false)
 		resultLabel.Text = "Card saved to Bag!"
 		resultLabel.TextColor3 = Color3.new(0, 1, 0)
@@ -1275,6 +1306,7 @@ end)
 discardBtn.MouseButton1Click:Connect(function()
 	currentCard = nil
 	confirmFrame.Visible = false
+	cardImage.Visible = false
 	setRollButtonActive(false)
 	resultLabel.Text = "Card discarded."
 	resultLabel.TextColor3 = Color3.new(1, 0, 0)
