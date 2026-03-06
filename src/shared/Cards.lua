@@ -8,7 +8,7 @@ local Cards = {
 	},
 
 	Items = {
-		{ Name = "Midoriya",    Rarity = "Common",    Description = "The successor of One For All.",           Image = "rbxassetid://144133933720962" },
+		{ Name = "Midoriya",    Rarity = "Common",    Description = "The successor of One For All.",           Image = "rbxassetid://136042757299582" },
 		{ Name = "Luffy",         Rarity = "Common",    Description = "Wants to be the Pirate King.",                  Image = "rbxassetid://0" },
 		{ Name = "Naruto",        Rarity = "Common",    Description = "The host of the Nine-Tails.",                   Image = "rbxassetid://0" },
 
@@ -23,6 +23,7 @@ local Cards = {
 
 		{ Name = "Gear 5 Luffy",  Rarity = "Mythic",    Description = "The warrior of liberation.",                    Image = "rbxassetid://0" },
 		{ Name = "Madara Uchiha", Rarity = "Mythic",    Description = "The legendary leader of the Uchiha clan.",      Image = "rbxassetid://0" },
+		{ Name = "Naruto nine tails", Rarity = "Mythic",    Description = "The nine tails ultimate ninja.",      Image = "rbxassetid://82708853252930" }
 	}
 }
 
