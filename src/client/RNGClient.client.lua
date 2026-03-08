@@ -3,6 +3,7 @@ local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local StarterGui = game:GetService("StarterGui")
 local UserInputService = game:GetService("UserInputService")
+local ContentProvider = game:GetService("ContentProvider")
 
 -- Disable default PlayerList
 StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList, false)
@@ -478,6 +479,7 @@ local function createUI()
 	countLabel.Parent = invBottomBar
 
 	local deleteModeBtn = Instance.new("TextButton")
+	deleteModeBtn.Name = "DeleteModeBtn"
 	deleteModeBtn.Size = UDim2.new(0, 150, 0, 30)
 	deleteModeBtn.Position = UDim2.new(1, -150, 0.5, -15)
 	deleteModeBtn.Text = "DELETE MODE"
@@ -487,6 +489,61 @@ local function createUI()
 	deleteModeBtn.TextSize = 12
 	deleteModeBtn.Parent = invBottomBar
 	applyModernStyle(deleteModeBtn, Color3.fromRGB(180, 40, 40), Color3.fromRGB(120, 20, 20))
+
+	-- Bulk Delete Confirmation Overlay
+	local bulkConfirmFrame = Instance.new("Frame")
+	bulkConfirmFrame.Name = "BulkConfirmFrame"
+	bulkConfirmFrame.Size = UDim2.new(0.4, 0, 0.3, 0)
+	bulkConfirmFrame.Position = UDim2.new(0.3, 0, 0, -200) -- Off-screen initially
+	bulkConfirmFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+	bulkConfirmFrame.ZIndex = 50
+	bulkConfirmFrame.Visible = false
+	local bcc = Instance.new("UICorner")
+	bcc.CornerRadius = UDim.new(0, 10)
+	bcc.Parent = bulkConfirmFrame
+	local bcs = Instance.new("UIStroke")
+	bcs.Color = Color3.fromRGB(180, 40, 40)
+	bcs.Thickness = 2
+	bcs.Parent = bulkConfirmFrame
+	bulkConfirmFrame.Parent = invFrame
+	
+	local bcLabel = Instance.new("TextLabel")
+	bcLabel.Name = "Msg"
+	bcLabel.Size = UDim2.new(1, -20, 0, 60)
+	bcLabel.Position = UDim2.new(0, 10, 0.1, 0)
+	bcLabel.Text = "DELETE 0 CARDS?"
+	bcLabel.TextColor3 = Color3.new(1, 1, 1)
+	bcLabel.Font = Enum.Font.GothamBold
+	bcLabel.TextSize = 18
+	bcLabel.BackgroundTransparency = 1
+	bcLabel.ZIndex = 51
+	bcLabel.Parent = bulkConfirmFrame
+	
+	local bcYes = Instance.new("TextButton")
+	bcYes.Name = "YesBtn"
+	bcYes.Size = UDim2.new(0.4, 0, 0, 40)
+	bcYes.Position = UDim2.new(0.05, 0, 0.7, 0)
+	bcYes.Text = "YES, DELETE"
+	bcYes.BackgroundColor3 = Color3.fromRGB(180, 40, 40)
+	bcYes.TextColor3 = Color3.new(1, 1, 1)
+	bcYes.Font = Enum.Font.GothamBold
+	bcYes.TextSize = 14
+	bcYes.ZIndex = 51
+	bcYes.Parent = bulkConfirmFrame
+	applyModernStyle(bcYes, Color3.fromRGB(180, 40, 40), Color3.fromRGB(120, 20, 20))
+	
+	local bcNo = Instance.new("TextButton")
+	bcNo.Name = "NoBtn"
+	bcNo.Size = UDim2.new(0.4, 0, 0, 40)
+	bcNo.Position = UDim2.new(0.55, 0, 0.7, 0)
+	bcNo.Text = "CANCEL"
+	bcNo.BackgroundColor3 = Color3.fromRGB(80, 80, 85)
+	bcNo.TextColor3 = Color3.new(1, 1, 1)
+	bcNo.Font = Enum.Font.GothamBold
+	bcNo.TextSize = 14
+	bcNo.ZIndex = 51
+	bcNo.Parent = bulkConfirmFrame
+	applyModernStyle(bcNo, Color3.fromRGB(80, 80, 85), Color3.fromRGB(50, 50, 55))
 
 	-- Details Panel (Left)
 	local detailsFrame = Instance.new("Frame")
@@ -499,8 +556,8 @@ local function createUI()
 
 	local dName = Instance.new("TextLabel")
 	dName.Name = "ItemName"
-	dName.Size = UDim2.new(1, -20, 0, 30)
-	dName.Position = UDim2.new(0, 10, 0, 15)
+	dName.Size = UDim2.new(1, -20, 0, 25)
+	dName.Position = UDim2.new(0, 10, 0, 10)
 	dName.Text = "SELECT A CARD"
 	dName.TextColor3 = Color3.new(1, 1, 1)
 	dName.Font = Enum.Font.GothamBold
@@ -511,26 +568,45 @@ local function createUI()
 
 	local dChance = Instance.new("TextLabel")
 	dChance.Name = "ItemChance"
-	dChance.Size = UDim2.new(1, -20, 0, 20)
-	dChance.Position = UDim2.new(0, 10, 0, 50)
+	dChance.Size = UDim2.new(1, -20, 0, 15)
+	dChance.Position = UDim2.new(0, 10, 0, 35)
 	dChance.Text = ""
 	dChance.TextColor3 = Color3.new(1, 1, 1) -- Brighter
 	dChance.Font = Enum.Font.GothamBold
-	dChance.TextSize = 14 -- Increased
+	dChance.TextSize = 13 -- Adjusted
 	dChance.BackgroundTransparency = 1
 	dChance.Parent = detailsFrame
 
 	local dQuote = Instance.new("TextLabel")
 	dQuote.Name = "ItemQuote"
-	dQuote.Size = UDim2.new(1, -20, 0, 80)
-	dQuote.Position = UDim2.new(0, 10, 0, 90)
+	dQuote.Size = UDim2.new(1, -20, 0, 20)
+	dQuote.Position = UDim2.new(0, 10, 0, -100) -- Move off-screen
+	dQuote.Visible = false
 	dQuote.Text = ""
-	dQuote.TextColor3 = Color3.fromRGB(220, 220, 220) -- Brighter
+	dQuote.TextColor3 = Color3.fromRGB(220, 220, 220)
 	dQuote.Font = Enum.Font.GothamMedium
-	dQuote.TextSize = 13 -- Increased
+	dQuote.TextSize = 12
 	dQuote.TextWrapped = true
 	dQuote.BackgroundTransparency = 1
 	dQuote.Parent = detailsFrame
+	
+	local dImage = Instance.new("ImageLabel")
+	dImage.Name = "ItemImage"
+	dImage.Size = UDim2.new(0, 150, 0, 185)
+	dImage.Position = UDim2.new(0.5, -75, 0, 55)
+	dImage.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+	dImage.BackgroundTransparency = 0.4
+	dImage.Image = ""
+	dImage.ScaleType = Enum.ScaleType.Fit
+	dImage.Visible = false
+	local diCorner = Instance.new("UICorner")
+	diCorner.CornerRadius = UDim.new(0, 8)
+	diCorner.Parent = dImage
+	local diStroke = Instance.new("UIStroke")
+	diStroke.Thickness = 2.5
+	diStroke.Transparency = 0.2
+	diStroke.Parent = dImage
+	dImage.Parent = detailsFrame
 
 	local equipBtn = Instance.new("TextButton")
 	equipBtn.Name = "EquipBtn"
@@ -557,6 +633,57 @@ local function createUI()
 	deleteBtn.Visible = false
 	deleteBtn.Parent = detailsFrame
 	applyModernStyle(deleteBtn, Color3.fromRGB(180, 40, 40), Color3.fromRGB(120, 20, 20))
+	
+	-- Delete Confirmation Overlay
+	local confirmDeleteFrame = Instance.new("Frame")
+	confirmDeleteFrame.Name = "ConfirmDeleteFrame"
+	confirmDeleteFrame.Size = UDim2.new(1, 0, 1, 0)
+	confirmDeleteFrame.Position = UDim2.new(0, 0, 0, 0)
+	confirmDeleteFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+	confirmDeleteFrame.BackgroundTransparency = 0.1
+	confirmDeleteFrame.ZIndex = 10
+	confirmDeleteFrame.Visible = false
+	local cdCorner = Instance.new("UICorner")
+	cdCorner.CornerRadius = UDim.new(0, 10)
+	cdCorner.Parent = confirmDeleteFrame
+	confirmDeleteFrame.Parent = detailsFrame
+	
+	local cdLabel = Instance.new("TextLabel")
+	cdLabel.Size = UDim2.new(1, -20, 0, 40)
+	cdLabel.Position = UDim2.new(0, 10, 0.5, -40)
+	cdLabel.Text = "ARE YOU SURE?"
+	cdLabel.TextColor3 = Color3.new(1, 1, 1)
+	cdLabel.Font = Enum.Font.GothamBold
+	cdLabel.TextSize = 18
+	cdLabel.BackgroundTransparency = 1
+	cdLabel.ZIndex = 11
+	cdLabel.Parent = confirmDeleteFrame
+	
+	local cdYes = Instance.new("TextButton")
+	cdYes.Name = "YesBtn"
+	cdYes.Size = UDim2.new(0.4, 0, 0, 35)
+	cdYes.Position = UDim2.new(0.05, 0, 0.5, 10)
+	cdYes.Text = "YES"
+	cdYes.BackgroundColor3 = Color3.fromRGB(180, 40, 40)
+	cdYes.TextColor3 = Color3.new(1, 1, 1)
+	cdYes.Font = Enum.Font.GothamBold
+	cdYes.TextSize = 14
+	cdYes.ZIndex = 11
+	cdYes.Parent = confirmDeleteFrame
+	applyModernStyle(cdYes, Color3.fromRGB(180, 40, 40), Color3.fromRGB(120, 20, 20))
+	
+	local cdNo = Instance.new("TextButton")
+	cdNo.Name = "NoBtn"
+	cdNo.Size = UDim2.new(0.4, 0, 0, 35)
+	cdNo.Position = UDim2.new(0.55, 0, 0.5, 10)
+	cdNo.Text = "NO"
+	cdNo.BackgroundColor3 = Color3.fromRGB(80, 80, 85)
+	cdNo.TextColor3 = Color3.new(1, 1, 1)
+	cdNo.Font = Enum.Font.GothamBold
+	cdNo.TextSize = 14
+	cdNo.ZIndex = 11
+	cdNo.Parent = confirmDeleteFrame
+	applyModernStyle(cdNo, Color3.fromRGB(80, 80, 85), Color3.fromRGB(50, 50, 55))
 
 	local lockBtn = Instance.new("TextButton")
 	lockBtn.Name = "LockBtn"
@@ -718,9 +845,44 @@ local rollRequested = remotesFolder:WaitForChild("RollRequested")
 local rollResult = remotesFolder:WaitForChild("RollResult")
 local claimCard = remotesFolder:WaitForChild("ClaimCard")
 local getInventory = remotesFolder:WaitForChild("GetInventory")
+local deleteItem = remotesFolder:WaitForChild("DeleteItem")
+local deleteCards = remotesFolder:WaitForChild("DeleteCards")
+local toggleLock = remotesFolder:WaitForChild("ToggleLock")
+
+local currentSelectedItem = nil -- Tracks which inventory item is selected
+local isDeleteMode = false
+local selectedForDelete = {} -- Maps card.Id to true
+local activeCells = {} -- Tracks active cell instances by card.Id
+local lastInventoryData = {} -- Stores the last fetched inventory data
 
 -- Logic Functions
-local rarityOrder = {"Common", "Rare", "Epic", "Legendary", "Mythic"}
+-- Helper to format numbers with commas
+local function formatNumber(n)
+	return tostring(n):reverse():gsub("(%d%d%d)", "%1,"):reverse():gsub("^,", "")
+end
+
+-- Function to preload all card assets to avoid loading delays
+local function preloadCardAssets()
+	local assetsToPreload = {}
+	
+	for _, item in ipairs(Cards.Items) do
+		if item.Image and item.Image ~= "" and item.Image ~= "rbxassetid://0" then
+			table.insert(assetsToPreload, item.Image)
+		end
+	end
+	
+	if #assetsToPreload > 0 then
+		print(string.format("[RNG] Preloading %d assets...", #assetsToPreload))
+		local success, err = pcall(function()
+			ContentProvider:PreloadAsync(assetsToPreload)
+		end)
+		if success then
+			print("[RNG] Assets preloaded successfully.")
+		else
+			warn("[RNG] Error preloading assets:", err)
+		end
+	end
+end
 
 local function updateLuckUI()
 	local progress = sessionSpins % 11
@@ -734,12 +896,9 @@ local function updateLuckUI()
 end
 
 local function updateInventory()
-	for _, child in ipairs(scroll:GetChildren()) do
-		if child:IsA("TextButton") then child:Destroy() end
-	end
-	
 	local data = getInventory:InvokeServer()
 	local inventory = data.Cards
+	lastInventoryData = inventory
 	totalSpins = data.Spins
 	
 	updateLuckUI()
@@ -763,87 +922,224 @@ local function updateInventory()
 	
 	local detailsFrame = invFrame:FindFirstChild("DetailsFrame")
 
+	-- 1. Identify which cells to remove
+	local currentIds = {}
 	for _, item in ipairs(inventory) do
-		local cell = Instance.new("TextButton")
-		cell.Size = UDim2.new(0, 100, 0, 100)
-		cell.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
-		cell.Text = ""
-		local cCorner = Instance.new("UICorner")
-		cCorner.CornerRadius = UDim.new(0, 6)
-		cCorner.Parent = cell
-		
+		currentIds[item.Id] = true
+	end
+	
+	for id, cell in pairs(activeCells) do
+		if not currentIds[id] then
+			cell:Destroy()
+			activeCells[id] = nil
+		end
+	end
+
+	-- 2. Update or Create cells
+	for i, item in ipairs(inventory) do
+		local cell = activeCells[item.Id]
 		local rarityData = Cards.Rarities[item.Rarity]
 		local rColor = rarityData and rarityData.Color or Color3.new(1, 1, 1)
-		
-		local stroke = Instance.new("UIStroke")
-		stroke.Color = rColor
-		stroke.Thickness = 2
-		stroke.Parent = cell
 
-		-- Card image (top 55% of the cell)
-		local cellImage = Instance.new("ImageLabel")
-		cellImage.Size = UDim2.new(1, -6, 0.55, 0)
-		cellImage.Position = UDim2.new(0, 3, 0, 3)
-		cellImage.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
-		cellImage.BackgroundTransparency = 0.4
-		cellImage.Image = item.Image or ""
-		cellImage.ScaleType = Enum.ScaleType.Fit
-		local ciCorner = Instance.new("UICorner")
-		ciCorner.CornerRadius = UDim.new(0, 4)
-		ciCorner.Parent = cellImage
-		cellImage.Parent = cell
-		
-		local nameLbl = Instance.new("TextLabel")
-		nameLbl.Size = UDim2.new(1, -6, 0.28, 0)
-		nameLbl.Position = UDim2.new(0, 3, 0.57, 0)
-		nameLbl.Text = item.Name:upper()
-		nameLbl.TextColor3 = rColor
-		nameLbl.Font = Enum.Font.GothamBold
-		nameLbl.TextSize = 11
-		nameLbl.TextWrapped = true
-		nameLbl.BackgroundTransparency = 1
-		nameLbl.Parent = cell
-		
-		local nStroke = Instance.new("UIStroke")
-		nStroke.Thickness = 1
-		nStroke.Color = Color3.new(0, 0, 0)
-		nStroke.Transparency = 0.4
-		nStroke.Parent = nameLbl
+		if not cell then
+			cell = Instance.new("TextButton")
+			cell.Name = item.Id
+			cell.Size = UDim2.new(0, 100, 0, 100)
+			cell.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
+			cell.Text = ""
+			local cCorner = Instance.new("UICorner")
+			cCorner.CornerRadius = UDim.new(0, 6)
+			cCorner.Parent = cell
+			
+			local stroke = Instance.new("UIStroke")
+			stroke.Color = rColor
+			stroke.Thickness = 2
+			stroke.Parent = cell
 
-		local chanceLbl = Instance.new("TextLabel")
-		chanceLbl.Size = UDim2.new(1, -6, 0.18, 0)
-		chanceLbl.Position = UDim2.new(0, 3, 0.82, 0)
-		chanceLbl.Text = rarityData and string.format("%g%%", rarityData.Chance) or ""
-		chanceLbl.TextColor3 = Color3.new(0.8, 0.8, 0.8)
-		chanceLbl.Font = Enum.Font.GothamBold
-		chanceLbl.TextSize = 10
-		chanceLbl.BackgroundTransparency = 1
-		chanceLbl.Parent = cell
+			local cellImage = Instance.new("ImageLabel")
+			cellImage.Name = "ItemImage"
+			cellImage.Size = UDim2.new(1, -6, 0.55, 0)
+			cellImage.Position = UDim2.new(0, 3, 0, 3)
+			cellImage.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+			cellImage.BackgroundTransparency = 0.4
+			cellImage.Image = item.Image or ""
+			cellImage.ScaleType = Enum.ScaleType.Fit
+			local ciCorner = Instance.new("UICorner")
+			ciCorner.CornerRadius = UDim.new(0, 4)
+			ciCorner.Parent = cellImage
+			cellImage.Parent = cell
+			
+			local nameLbl = Instance.new("TextLabel")
+			nameLbl.Name = "ItemName"
+			nameLbl.Size = UDim2.new(1, -6, 0.28, 0)
+			nameLbl.Position = UDim2.new(0, 3, 0.57, 0)
+			nameLbl.Text = item.Name:upper()
+			nameLbl.TextColor3 = rColor
+			nameLbl.Font = Enum.Font.GothamBold
+			nameLbl.TextSize = 11
+			nameLbl.TextWrapped = true
+			nameLbl.BackgroundTransparency = 1
+			nameLbl.Parent = cell
+			
+			local nStroke = Instance.new("UIStroke")
+			nStroke.Thickness = 1
+			nStroke.Color = Color3.new(0, 0, 0)
+			nStroke.Transparency = 0.4
+			nStroke.Parent = nameLbl
 
-		local cStroke = Instance.new("UIStroke")
-		cStroke.Thickness = 1
-		cStroke.Color = Color3.new(0, 0, 0)
-		cStroke.Transparency = 0.4
-		cStroke.Parent = chanceLbl
-		
-		-- Click Interaction
-		cell.MouseButton1Click:Connect(function()
-			if detailsFrame then
-				local dName = detailsFrame:FindFirstChild("ItemName")
-				local dChance = detailsFrame:FindFirstChild("ItemChance")
-				local equipBtn = detailsFrame:FindFirstChild("EquipBtn")
-				local deleteBtn = detailsFrame:FindFirstChild("DeleteBtn")
-				local lockBtn = detailsFrame:FindFirstChild("LockBtn")
+			local chanceLbl = Instance.new("TextLabel")
+			chanceLbl.Name = "ItemChance"
+			chanceLbl.Size = UDim2.new(1, -6, 0.18, 0)
+			chanceLbl.Position = UDim2.new(0, 3, 0.82, 0)
+			chanceLbl.Text = rarityData and (rarityData.Name == "Common" and "1 in 1" or "1 in " .. formatNumber(rarityData.Chance)) or ""
+			chanceLbl.TextColor3 = Color3.new(0.8, 0.8, 0.8)
+			chanceLbl.Font = Enum.Font.GothamBold
+			chanceLbl.TextSize = 10
+			chanceLbl.BackgroundTransparency = 1
+			chanceLbl.Parent = cell
+
+			local cStroke = Instance.new("UIStroke")
+			cStroke.Thickness = 1
+			cStroke.Color = Color3.new(0, 0, 0)
+			cStroke.Transparency = 0.4
+			cStroke.Parent = chanceLbl
+			
+			activeCells[item.Id] = cell
+			
+			-- Only apply click once for new cells
+			cell.MouseButton1Click:Connect(function()
+				-- Find latest item data
+				local latestItem = nil
+				for _, it in ipairs(lastInventoryData) do
+					if it.Id == item.Id then
+						latestItem = it
+						break
+					end
+				end
+				if not latestItem then return end
 				
-				if dName then dName.Text = item.Name:upper(); dName.TextColor3 = rColor end
-				if dChance then dChance.Text = chanceLbl.Text end
-				if equipBtn then equipBtn.Visible = true end
-				if deleteBtn then deleteBtn.Visible = true end
-				if lockBtn then lockBtn.Visible = true end
-			end
-		end)
+				if isDeleteMode then
+					if latestItem.Locked then return end
+					selectedForDelete[latestItem.Id] = (not selectedForDelete[latestItem.Id]) or nil
+					
+					-- Local refresh call to update border
+					local updateFunc = cell:FindFirstChild("UpdateVisuals")
+					if updateFunc then updateFunc:Invoke() end
+					
+					local deleteModeBtn = invFrame:FindFirstChild("DeleteModeBtn", true)
+					if deleteModeBtn then
+						local count = 0
+						for _ in pairs(selectedForDelete) do count = count + 1 end
+						if count > 0 then
+							deleteModeBtn.Text = string.format("CONFIRM DELETE (%d)", count)
+							deleteModeBtn.BackgroundColor3 = Color3.fromRGB(220, 40, 40)
+						else
+							deleteModeBtn.Text = "CANCEL DELETE MODE"
+							deleteModeBtn.BackgroundColor3 = Color3.fromRGB(180, 40, 40)
+						end
+					end
+					return
+				end
+				
+				currentSelectedItem = latestItem
+				if detailsFrame then
+					local dName = detailsFrame:FindFirstChild("ItemName")
+					local dChance = detailsFrame:FindFirstChild("ItemChance")
+					local equipBtn = detailsFrame:FindFirstChild("EquipBtn")
+					local deleteBtn = detailsFrame:FindFirstChild("DeleteBtn")
+					local lockBtn = detailsFrame:FindFirstChild("LockBtn")
+					local dImage = detailsFrame:FindFirstChild("ItemImage")
+					
+					local latestRarity = Cards.Rarities[latestItem.Rarity]
+					local latestColor = latestRarity and latestRarity.Color or Color3.new(1, 1, 1)
+					
+					if dName then dName.Text = latestItem.Name:upper(); dName.TextColor3 = latestColor end
+					local chanceText = latestRarity and (latestRarity.Name == "Common" and "1 in 1" or "1 in " .. formatNumber(latestRarity.Chance)) or ""
+					if dChance then dChance.Text = chanceText end
+					if dImage then
+						dImage.Image = latestItem.Image or ""
+						dImage.Visible = true
+						local diStroke = dImage:FindFirstChildOfClass("UIStroke")
+						if diStroke then diStroke.Color = latestColor end
+					end
+					if equipBtn then equipBtn.Visible = true end
+					if deleteBtn then
+						deleteBtn.Visible = true
+						if latestItem.Locked then
+							deleteBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+							deleteBtn.Text = "LOCKED"
+						else
+							deleteBtn.BackgroundColor3 = Color3.fromRGB(180, 40, 40)
+							deleteBtn.Text = "DELETE"
+						end
+					end
+					if lockBtn then
+						lockBtn.Visible = true
+						lockBtn.Text = latestItem.Locked and "🔒 UNLOCK" or "🔓 LOCK"
+					end
+				end
+				
+				for _, otherCell in pairs(activeCells) do
+					local uf = otherCell:FindFirstChild("UpdateVisuals")
+					if uf then uf:Invoke() end
+				end
+			end)
+			
+			cell.Parent = scroll
+		end
+
+		-- Sync properties for existing/new cells
+		cell.LayoutOrder = i
 		
-		cell.Parent = scroll
+		local lockIcon = cell:FindFirstChild("LockIcon")
+		if item.Locked then
+			if not lockIcon then
+				lockIcon = Instance.new("TextLabel")
+				lockIcon.Name = "LockIcon"
+				lockIcon.Size = UDim2.new(0, 16, 0, 16)
+				lockIcon.Position = UDim2.new(1, -18, 0, 2)
+				lockIcon.BackgroundTransparency = 1
+				lockIcon.Text = "🔒"
+				lockIcon.TextScaled = true
+				lockIcon.ZIndex = 10
+				lockIcon.Parent = cell
+			end
+		elseif lockIcon then
+			lockIcon:Destroy()
+		end
+
+		-- Visual state updater (stored on the cell for easy access)
+		local updateVisuals = cell:FindFirstChild("UpdateVisuals")
+		if not updateVisuals then
+			updateVisuals = Instance.new("BindableFunction")
+			updateVisuals.Name = "UpdateVisuals"
+			updateVisuals.Parent = cell
+		end
+		
+		updateVisuals.OnInvoke = function()
+			local currentStroke = cell:FindFirstChild("SelectionStroke")
+			if currentStroke then currentStroke:Destroy() end
+			
+			if isDeleteMode and selectedForDelete[item.Id] then
+				cell.BackgroundColor3 = Color3.fromRGB(100, 30, 30) -- Dark red background for deletion
+				local sStroke = Instance.new("UIStroke")
+				sStroke.Name = "SelectionStroke"
+				sStroke.Thickness = 3
+				sStroke.Color = Color3.fromRGB(220, 50, 50)
+				sStroke.Parent = cell
+			elseif currentSelectedItem and currentSelectedItem.Id == item.Id then
+				cell.BackgroundColor3 = Color3.fromRGB(35, 35, 40) -- Normal background
+				local sStroke = Instance.new("UIStroke")
+				sStroke.Name = "SelectionStroke"
+				sStroke.Thickness = 2
+				sStroke.Color = Color3.new(1, 1, 1)
+				sStroke.Parent = cell
+			else
+				cell.BackgroundColor3 = Color3.fromRGB(35, 35, 40) -- Normal background
+			end
+		end
+		
+		updateVisuals:Invoke()
 	end
 	
 	-- UIGridLayout calculates AbsoluteContentSize dynamically
@@ -1142,6 +1438,162 @@ local function performRoll()
 end
 
 -- UI Handlers
+local globalDetailsFrame = invFrame:WaitForChild("DetailsFrame")
+local globalDeleteBtn = globalDetailsFrame:WaitForChild("DeleteBtn")
+local globalLockBtn = globalDetailsFrame:WaitForChild("LockBtn")
+local confirmDeleteFrame = globalDetailsFrame:WaitForChild("ConfirmDeleteFrame")
+local cdYes = confirmDeleteFrame:WaitForChild("YesBtn")
+local cdNo = confirmDeleteFrame:WaitForChild("NoBtn")
+
+globalDeleteBtn.MouseButton1Click:Connect(function()
+	if currentSelectedItem and currentSelectedItem.Id then
+		if currentSelectedItem.Locked then return end
+		confirmDeleteFrame.Visible = true
+	end
+end)
+
+cdNo.MouseButton1Click:Connect(function()
+	confirmDeleteFrame.Visible = false
+end)
+
+cdYes.MouseButton1Click:Connect(function()
+	if currentSelectedItem and currentSelectedItem.Id and not currentSelectedItem.Locked then
+		confirmDeleteFrame.Visible = false
+		deleteItem:FireServer(currentSelectedItem.Id)
+		
+		-- Hide Details and Refresh
+		currentSelectedItem = nil
+		local dName = globalDetailsFrame:FindFirstChild("ItemName")
+		if dName then dName.Text = "SELECT A CARD"; dName.TextColor3 = Color3.new(1, 1, 1) end
+		local dChance = globalDetailsFrame:FindFirstChild("ItemChance")
+		if dChance then dChance.Text = "" end
+		local dImage = globalDetailsFrame:FindFirstChild("ItemImage")
+		if dImage then dImage.Visible = false end
+		globalDeleteBtn.Visible = false
+		globalLockBtn.Visible = false
+		local equipBtn = globalDetailsFrame:FindFirstChild("EquipBtn")
+		if equipBtn then equipBtn.Visible = false end
+		
+		task.wait(0.1) -- small buffer before pulling new data
+		updateInventory()
+	end
+end)
+
+globalLockBtn.MouseButton1Click:Connect(function()
+	if currentSelectedItem and currentSelectedItem.Id then
+		toggleLock:FireServer(currentSelectedItem.Id)
+		currentSelectedItem.Locked = not currentSelectedItem.Locked
+		updateInventory() -- Refresh to show the lock icon in the grid and update button
+	end
+end)
+
+
+local globalDeleteModeBtn = nil
+for _, desc in ipairs(invFrame:GetDescendants()) do
+	if desc.Name == "DeleteModeBtn" then
+		globalDeleteModeBtn = desc
+		break
+	end
+end
+
+local bulkConfirmFrame = invFrame:WaitForChild("BulkConfirmFrame")
+local bcYes = bulkConfirmFrame:WaitForChild("YesBtn")
+local bcNo = bulkConfirmFrame:WaitForChild("NoBtn")
+local bcMsg = bulkConfirmFrame:WaitForChild("Msg")
+
+if globalDeleteModeBtn then
+	globalDeleteModeBtn.MouseButton1Click:Connect(function()
+		if not isDeleteMode then
+			-- Enter Delete Mode
+			isDeleteMode = true
+			selectedForDelete = {}
+			globalDeleteModeBtn.Text = "CANCEL DELETE MODE"
+			globalDeleteModeBtn.BackgroundColor3 = Color3.fromRGB(180, 40, 40)
+			
+			-- Hide Details Panel
+			currentSelectedItem = nil
+			if globalDetailsFrame then
+				local dName = globalDetailsFrame:FindFirstChild("ItemName")
+				if dName then dName.Text = "SELECT A CARD TO DELETE"; dName.TextColor3 = Color3.fromRGB(220, 50, 50) end
+				local dChance = globalDetailsFrame:FindFirstChild("ItemChance")
+				if dChance then dChance.Text = "" end
+				local dImage = globalDetailsFrame:FindFirstChild("ItemImage")
+				if dImage then dImage.Visible = false end
+				globalDeleteBtn.Visible = false
+				globalLockBtn.Visible = false
+				local equipBtn = globalDetailsFrame:FindFirstChild("EquipBtn")
+				if equipBtn then equipBtn.Visible = false end
+			end
+			
+			updateInventory() -- Refresh visuals
+		else
+			-- Exit or Trigger Confirm
+			local count = 0
+			local idsToDelete = {}
+			for id, _ in pairs(selectedForDelete) do
+				count = count + 1
+				table.insert(idsToDelete, id)
+			end
+			
+			if count > 0 then
+				-- Show Bulk Confirmation
+				bcMsg.Text = string.format("DELETE %d CARDS?", count)
+				bulkConfirmFrame.Visible = true
+				bulkConfirmFrame:TweenPosition(UDim2.new(0.3, 0, 0.35, 0), "Out", "Back", 0.4, true)
+			else
+				-- Just cancel mode
+				isDeleteMode = false
+				selectedForDelete = {}
+				globalDeleteModeBtn.Text = "DELETE MODE"
+				globalDeleteModeBtn.BackgroundColor3 = Color3.fromRGB(180, 40, 40)
+				local dName = globalDetailsFrame:FindFirstChild("ItemName")
+				if dName then dName.Text = "SELECT A CARD"; dName.TextColor3 = Color3.new(1, 1, 1) end
+				updateInventory()
+			end
+		end
+	end)
+end
+
+bcNo.MouseButton1Click:Connect(function()
+	bulkConfirmFrame:TweenPosition(UDim2.new(0.3, 0, 0, -300), "In", "Quad", 0.3, true, function()
+		bulkConfirmFrame.Visible = false
+	end)
+end)
+
+bcYes.MouseButton1Click:Connect(function()
+	local idsToDelete = {}
+	for id, _ in pairs(selectedForDelete) do
+		table.insert(idsToDelete, id)
+	end
+	
+	if #idsToDelete > 0 then
+		if globalDeleteModeBtn then 
+			globalDeleteModeBtn.Text = "DELETING..." 
+			globalDeleteModeBtn.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+		end
+		
+		bulkConfirmFrame:TweenPosition(UDim2.new(0.3, 0, 0, -300), "In", "Quad", 0.2, true, function()
+			bulkConfirmFrame.Visible = false
+		end)
+		
+		deleteCards:FireServer(idsToDelete)
+		task.wait(0.3)
+	end
+	
+	-- Cleanup Mode
+	isDeleteMode = false
+	selectedForDelete = {}
+	if globalDeleteModeBtn then
+		globalDeleteModeBtn.Text = "DELETE MODE"
+		globalDeleteModeBtn.BackgroundColor3 = Color3.fromRGB(180, 40, 40)
+	end
+	
+	local dName = globalDetailsFrame:FindFirstChild("ItemName")
+	if dName then dName.Text = "SELECT A CARD"; dName.TextColor3 = Color3.new(1, 1, 1) end
+	
+	updateInventory()
+end)
+
 invToggle.MouseButton1Click:Connect(function()
 	invFrame.Visible = not invFrame.Visible
 	if invFrame.Visible then updateInventory() end
@@ -1215,8 +1667,9 @@ autoButton.MouseButton1Click:Connect(function()
 end)
 
 filterBtn.MouseButton1Click:Connect(function()
-	minRarityRank = (minRarityRank % 5) + 1
-	local rarityName = rarityOrder[minRarityRank]
+	local fOrder = {"Common", "Rare", "Epic", "Legendary", "Mythic", "Secret"}
+	minRarityRank = (minRarityRank % #fOrder) + 1
+	local rarityName = fOrder[minRarityRank]
 	filterBtn.Text = "FILTER: " .. rarityName:upper() .. "+"
 	filterBtn.TextColor3 = Cards.Rarities[rarityName].Color
 end)
@@ -1266,7 +1719,8 @@ rollResult.OnClientEvent:Connect(function(item)
 	if rarityData.Vfx.Flash then applyFlash(rarityData.Color) end
 
 	currentCard = item
-	resultLabel.Text = string.format("YOU GOT: %s!\n(%s)", item.Name, item.Rarity)
+	local displayChance = rarityData.Name == "Common" and "1/1" or "1/" .. formatNumber(rarityData.Chance)
+	resultLabel.Text = string.format("YOU GOT: %s!\n(%s - %s)", item.Name, item.Rarity, displayChance)
 	resultLabel.TextColor3 = rarityData.Color
 	if resultLabel:FindFirstChild("ShadowLabel") then
 		resultLabel.ShadowLabel.Text = resultLabel.Text
@@ -1345,5 +1799,6 @@ task.spawn(function()
 end)
 
 print("RNG Client initialized.")
+task.spawn(preloadCardAssets) -- Preload images in the background
 updateInventory() -- Initial sync
 updateLeaderboard()

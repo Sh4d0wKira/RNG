@@ -1,10 +1,11 @@
 local Cards = {
 	Rarities = {
-		Common = { Name = "Common", Color = Color3.fromRGB(163, 162, 165), Chance = 50, Rank = 1, Vfx = { Rate = 5, Size = 1, Light = 0 } },
-		Rare = { Name = "Rare", Color = Color3.fromRGB(0, 162, 255), Chance = 30, Rank = 2, Vfx = { Rate = 15, Size = 2, Light = 5 } },
-		Epic = { Name = "Epic", Color = Color3.fromRGB(170, 0, 255), Chance = 15, Rank = 3, Vfx = { Rate = 30, Size = 3, Light = 10 } },
-		Legendary = { Name = "Legendary", Color = Color3.fromRGB(255, 170, 0), Chance = 4.5, Rank = 4, Vfx = { Rate = 60, Size = 4, Light = 15, Shake = true } },
-		Mythic = { Name = "Mythic", Color = Color3.fromRGB(255, 0, 0), Chance = 0.5, Rank = 5, Vfx = { Rate = 120, Size = 6, Light = 30, Shake = true, Flash = true } },
+		Common = { Name = "Common", Color = Color3.fromRGB(163, 162, 165), Chance = 1, Rank = 1, Vfx = { Rate = 5, Size = 1, Light = 0 } },
+		Rare = { Name = "Rare", Color = Color3.fromRGB(0, 162, 255), Chance = 50, Rank = 2, Vfx = { Rate = 15, Size = 2, Light = 5 } },
+		Epic = { Name = "Epic", Color = Color3.fromRGB(170, 0, 255), Chance = 500, Rank = 3, Vfx = { Rate = 30, Size = 3, Light = 10 } },
+		Legendary = { Name = "Legendary", Color = Color3.fromRGB(255, 170, 0), Chance = 10000, Rank = 4, Vfx = { Rate = 60, Size = 4, Light = 15, Shake = true } },
+		Mythic = { Name = "Mythic", Color = Color3.fromRGB(255, 0, 0), Chance = 100000, Rank = 5, Vfx = { Rate = 120, Size = 6, Light = 30, Shake = true, Flash = true } },
+		Secret = { Name = "Secret", Color = Color3.fromRGB(150, 150, 150), Chance = 125000000, Rank = 6, Vfx = { Rate = 200, Size = 8, Light = 50, Shake = true, Flash = true } },
 	},
 
 	Items = {
@@ -23,7 +24,11 @@ local Cards = {
 
 		{ Name = "Gear 5 Luffy",  Rarity = "Mythic",    Description = "The warrior of liberation.",                    Image = "rbxassetid://0" },
 		{ Name = "Madara Uchiha", Rarity = "Mythic",    Description = "The legendary leader of the Uchiha clan.",      Image = "rbxassetid://0" },
-		{ Name = "Naruto nine tails", Rarity = "Mythic",    Description = "The nine tails ultimate ninja.",      Image = "rbxassetid://82708853252930" }
+		{ Name = "Naruto nine tails", Rarity = "Mythic",    Description = "The nine tails ultimate ninja.",      Image = "rbxassetid://82708853252930" },
+
+		{ Name = "Sung Jin-Woo",  Rarity = "Secret",    Description = "The Shadow Monarch.",                           Image = "rbxassetid://0" },
+		{ Name = "Aizen",         Rarity = "Secret",    Description = "Since when were you under the impression...",   Image = "rbxassetid://0" },
+		{ Name = "Gojo Satoru unmasked", Rarity = "Secret",    Description = "The honored one.",      Image = "rbxassetid://74927018547444" },
 	}
 }
 

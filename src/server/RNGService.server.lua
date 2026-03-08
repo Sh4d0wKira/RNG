@@ -37,43 +37,29 @@ local remotesFolder = initRemotes()
 function RNGService.Roll(player, luckMultiplier)
 	luckMultiplier = luckMultiplier or 1
 	
-	-- Weighted random calculation
-	local totalWeight = 0
-	local tempRarities = {}
-	local extraWeight = 0
-	
+	-- New logic: Roll per rarity, starting from the rarest (highest Rank)
+	local sortedRarities = {}
 	for name, data in pairs(Cards.Rarities) do
 		if name ~= "Common" then
-			local chance = data.Chance
-			if luckMultiplier > 1 then
-				local newChance = chance * luckMultiplier
-				extraWeight = extraWeight + (newChance - chance)
-				chance = newChance
-			end
-			table.insert(tempRarities, {Name = name, Chance = chance})
-			totalWeight = totalWeight + chance
+			table.insert(sortedRarities, {Name = name, Chance = data.Chance, Rank = data.Rank})
 		end
 	end
 	
-	local commonChance = math.max(1, Cards.Rarities.Common.Chance - extraWeight)
-	table.insert(tempRarities, {Name = "Common", Chance = commonChance})
-	totalWeight = totalWeight + commonChance
+	-- Sort by Rank Descending (Rarest first)
+	table.sort(sortedRarities, function(a, b) return a.Rank > b.Rank end)
 	
-	local rollValue = math.random() * totalWeight
-	local cumulativeChance = 0
-	local selectedRarity = nil
-
-	table.sort(tempRarities, function(a, b) return a.Chance < b.Chance end)
-
-	for _, rarity in ipairs(tempRarities) do
-		cumulativeChance = cumulativeChance + rarity.Chance
-		if rollValue <= cumulativeChance then
+	local selectedRarity = "Common"
+	
+	for _, rarity in ipairs(sortedRarities) do
+		-- "1 in X" logic: math.random(1, X) == 1
+		-- Luck multiplier reduces the effective "X": X / luckMultiplier
+		local effectiveChance = math.max(1, rarity.Chance / luckMultiplier)
+		if math.random() * effectiveChance <= 1 then
 			selectedRarity = rarity.Name
 			break
 		end
 	end
 	
-	selectedRarity = selectedRarity or "Common"
 	local itemsInRarity = Cards.GetItemsByRarity(selectedRarity)
 	
 	if #itemsInRarity == 0 then
@@ -83,9 +69,11 @@ function RNGService.Roll(player, luckMultiplier)
 	local selectedItem = itemsInRarity[math.random(1, #itemsInRarity)]
 	
 	if luckMultiplier > 1 then
-		print(string.format("[LUCKY ROLL] %s rolled: %s (%s)", player.Name, selectedItem.Name, selectedItem.Rarity))
+		print(string.format("[LUCKY ROLL] %s rolled: %s (1 in %s) [x%.1f Luck]", 
+			player.Name, selectedItem.Name, selectedItem.Rarity, luckMultiplier))
 	else
-		print(string.format("[RNG] %s rolled: %s (%s)", player.Name, selectedItem.Name, selectedItem.Rarity))
+		print(string.format("[RNG] %s rolled: %s (1 in %s)", 
+			player.Name, selectedItem.Name, selectedItem.Rarity))
 	end
 	
 	remotesFolder.RollResult:FireClient(player, selectedItem)
@@ -105,7 +93,7 @@ remotesFolder.RollRequested.OnServerEvent:Connect(function(player)
 	sessionLuck[player.UserId] = (sessionLuck[player.UserId] or 0) + 1
 	
 	if sessionLuck[player.UserId] % 11 == 0 then
-		luckMultiplier = 1.6
+		luckMultiplier = 2.2
 	end
 	
 	RNGService.Roll(player, luckMultiplier)

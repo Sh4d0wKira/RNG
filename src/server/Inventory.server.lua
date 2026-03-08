@@ -1,6 +1,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local DataStoreService = game:GetService("DataStoreService")
 local Players = game:GetService("Players")
+local HttpService = game:GetService("HttpService")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Remotes = require(Shared:WaitForChild("Remotes"))
@@ -40,12 +41,26 @@ local function loadPlayerData(player)
 		-- Migration and initialization
 		if data then
 			if data.Cards then
-				-- Already in new format
+				-- Already in new format, ensure they all have IDs
+				for _, card in ipairs(data.Cards) do
+					if not card.Id then
+						card.Id = HttpService:GenerateGUID(false)
+						card.Locked = false
+					end
+				end
 				Inventories[userId] = data
 			else
 				-- Old format was just a list of cards
+				local convertedCards = {}
+				for _, card in ipairs(data) do
+					if not card.Id then
+						card.Id = HttpService:GenerateGUID(false)
+						card.Locked = false
+					end
+					table.insert(convertedCards, card)
+				end
 				Inventories[userId] = {
-					Cards = data,
+					Cards = convertedCards,
 					Spins = 0
 				}
 			end
@@ -117,9 +132,75 @@ remotesFolder:WaitForChild(Remotes.ClaimCard).OnServerEvent:Connect(function(pla
 		Inventories[userId] = { Cards = {}, Spins = 0 }
 	end
 	
-	table.insert(Inventories[userId].Cards, cardData)
-	print(string.format("[Inventory] %s saved card: %s", player.Name, cardData.Name))
+	-- Assign a unique ID to each card so we can delete specific duplicates
+	cardData.Id = HttpService:GenerateGUID(false)
+	cardData.Locked = false
 	
+	table.insert(Inventories[userId].Cards, cardData)
+	print(string.format("[Inventory] %s saved card: %s (ID: %s)", player.Name, cardData.Name, cardData.Id))
+	
+	task.spawn(savePlayerData, player)
+end)
+
+-- Handle Delete
+remotesFolder:WaitForChild(Remotes.DeleteItem).OnServerEvent:Connect(function(player, cardId)
+	local userId = player.UserId
+	if not Inventories[userId] then return end
+	
+	for i, card in ipairs(Inventories[userId].Cards) do
+		if card.Id == cardId then
+			if card.Locked then
+				warn(string.format("[Inventory] %s tried to delete LOCKED card: %s", player.Name, card.Name))
+				return
+			end
+			table.remove(Inventories[userId].Cards, i)
+			print(string.format("[Inventory] %s deleted card: %s", player.Name, card.Name))
+			break
+		end
+	end
+	task.spawn(savePlayerData, player)
+end)
+
+-- Handle Multi-Delete (Delete Mode)
+remotesFolder:WaitForChild(Remotes.DeleteCards).OnServerEvent:Connect(function(player, cardIds)
+	local userId = player.UserId
+	if not Inventories[userId] then return end
+	if type(cardIds) ~= "table" then return end
+	
+	local toDelete = {}
+	for _, id in ipairs(cardIds) do
+		toDelete[id] = true
+	end
+	
+	local newCards = {}
+	local deletedCount = 0
+	
+	for _, card in ipairs(Inventories[userId].Cards) do
+		if toDelete[card.Id] and not card.Locked then
+			deletedCount = deletedCount + 1
+		else
+			table.insert(newCards, card)
+		end
+	end
+	
+	Inventories[userId].Cards = newCards
+	print(string.format("[Inventory] %s bulk deleted %d cards", player.Name, deletedCount))
+	
+	task.spawn(savePlayerData, player)
+end)
+
+-- Handle Lock/Unlock toggle
+remotesFolder:WaitForChild(Remotes.ToggleLock).OnServerEvent:Connect(function(player, cardId)
+	local userId = player.UserId
+	if not Inventories[userId] then return end
+	
+	for _, card in ipairs(Inventories[userId].Cards) do
+		if card.Id == cardId then
+			card.Locked = not card.Locked
+			print(string.format("[Inventory] %s %s card: %s", player.Name, card.Locked and "locked" or "unlocked", card.Name))
+			break
+		end
+	end
 	task.spawn(savePlayerData, player)
 end)
 
